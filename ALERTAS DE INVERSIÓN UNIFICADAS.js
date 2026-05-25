@@ -337,11 +337,12 @@ function enviarRecordatorioAleatorio() {
  * MOTORES TÉCNICOS
  */
 function obtenerAnalisisGemini(op) {
+  const props = PropertiesService.getScriptProperties();
   const apiKeys = [
-    'AIzaSyCpWTAoVHteFSMKN-1I7vVsARP1o6hbtZ0',
-    'AIzaSyBkU4Y70-xfqmD1kmCiEaND6rHkg7BNZHM',
-    'AIzaSyA8Naai3pv-DelgyWPbUywPb12LukAPd2c'
-  ];
+    props.getProperty('GEMINI_API_KEY_1'),
+    props.getProperty('GEMINI_API_KEY_2'),
+    props.getProperty('GEMINI_API_KEY_3')
+  ].filter(Boolean);
 
   const prompt =
     `Actúa como inversor experto explicando a un amateur la empresa ${op.nombre} (${op.ticker}). ` +
