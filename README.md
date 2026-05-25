@@ -1,84 +1,119 @@
-# Búnker de Inversión — Guía de trabajo
+# ValueRadar
 
-## Estructura del proyecto
+Sistema de alertas de inversión basado en valoración fundamental. Se ejecuta sobre Google Sheets con Google Apps Script y envía notificaciones automáticas a un canal de Telegram cuando una acción cae por debajo de su precio objetivo calculado.
 
-- Los archivos `.js` en `Búnker de Inversión/` son los scripts de Google Apps Script
-- `appsscript.json` es la configuración del proyecto de Apps Script
-- `BUNKER_SISTEMA_VALORACION_COMPLETO.md` documenta la lógica de valoración del Excel
+## Qué hace
 
----
+El sistema monitoriza una cartera de acciones (USA y mercados internacionales) y lanza tres tipos de alertas:
 
-## Flujo de trabajo
+- **Radar diario** (9:00 AM, lunes a viernes) — Top 5 gangas de USA y exUSA según descuento sobre precio objetivo.
+- **Alerta de condición** (cada hora) — Notifica en tiempo real cuando una acción pasa a estado "COMPRA GANGA" o "BUENA COMPRA".
+- **Recordatorio nocturno** (21:00) — Repaso aleatorio de oportunidades persistentes, rotando cada 3 días.
 
-### 1. Modificar código con Claude Code
+Cada alerta incluye un análisis breve generado con **Gemini 2.5 Flash** que resume en qué trabaja la empresa, su ventaja competitiva (MOAT) y el riesgo actual percibido por el mercado.
 
-```powershell
-cd "C:\Users\admin\Documents\Claude\Projects\Proyecto APP Búnker de Inversión"
-claude
+## Metodología de valoración
+
+El precio objetivo de cada acción se calcula combinando tres métodos ponderados según sector:
+
+| Método | Aplica a |
+|--------|----------|
+| DCF + Graham | Tecnología, Salud, Consumo, Industriales, Energía, Materiales, Utilities |
+| P/BV | Bancos y aseguradoras |
+| FFO/NAV | REITs |
+
+Sobre el precio objetivo combinado se aplica un margen de seguridad por sector. La señal de compra ("COMPRA GANGA") se activa cuando el precio actual cotiza por debajo del precio objetivo descontado por ese margen.
+
+## Arquitectura
+
+```
+Google Sheets (fuente de datos)
+    ├── Hoja "Bunker de inversion USA"
+    ├── Hoja "Bunker de inversion exUSA"
+    ├── Hoja "Ranking USA"
+    └── Hoja "Ranking exUSA"
+
+Google Apps Script (lógica y automatización)
+    ├── ALERTAS DE INVERSIÓN UNIFICADAS.js   ← motor principal
+    ├── enviarTelegram.js                     ← envío a Telegram
+    ├── guardarTokenTelegram.js               ← configuración del bot
+    ├── listarModelosDisponibles.js           ← utilidad Gemini
+    └── testTelegram.js                       ← diagnóstico
+
+APIs externas
+    ├── Telegram Bot API    ← canal de notificaciones
+    └── Gemini 2.5 Flash    ← análisis IA de cada empresa
 ```
 
-Pide los cambios en español directamente en Claude Code.
+## Requisitos
 
----
+- Cuenta de Google con acceso a Google Sheets y Apps Script
+- Bot de Telegram creado con [@BotFather](https://t.me/BotFather)
+- Canal o grupo de Telegram donde el bot sea administrador
+- API key de Google AI Studio (Gemini)
 
-### 2. Guardar cambios en GitHub
+## Configuración
 
-Después de cada modificación:
+### 1. Copiar los scripts a Apps Script
 
-```bash
-git add .
-git commit -m "descripción del cambio"
-git push
+1. Abre tu Google Sheet
+2. Ve a **Extensiones → Apps Script**
+3. Crea un archivo por cada `.js` de este repositorio y copia el contenido
+
+### 2. Adaptar la configuración
+
+En `ALERTAS DE INVERSIÓN UNIFICADAS.js`, edita el objeto `CONFIG` con los nombres exactos de tus hojas y el chat ID de tu canal de Telegram:
+
+```js
+const CONFIG = {
+  HOJA_USA:      "Bunker de inversion USA",   // nombre de tu hoja
+  HOJA_EXUSA:    "Bunker de inversion exUSA",
+  RANKING_USA:   "Ranking USA",
+  RANKING_EXUSA: "Ranking exUSA",
+  CHAT_ID:       "-1001234567890"              // ID de tu canal
+};
 ```
 
----
+### 3. Guardar las credenciales
 
-### 3. Subir cambios a Google Apps Script
+Las credenciales se almacenan en **Script Properties** (nunca en el código). En Apps Script ve a **Proyecto → Configuración → Propiedades del script** y añade:
 
-Para que los cambios se reflejen en el Google Sheet:
+| Propiedad | Valor |
+|-----------|-------|
+| `TELEGRAM_TOKEN` | Token de tu bot (de BotFather) |
+| `GEMINI_API_KEY` | Tu API key de Google AI Studio |
 
-```bash
-cd "Búnker de Inversión"
-clasp push
-```
+Alternativamente, ejecuta `guardarTokenTelegram()` una sola vez tras reemplazar el valor por tu propio token, y luego elimina el valor del código.
 
-Confirma con `yes` si pregunta si quieres sobreescribir.
+### 4. Configurar los triggers automáticos
 
----
+En Apps Script ve a **Triggers (reloj)** y crea:
 
-### 4. Verificar cambios en Google Apps Script
+| Función | Tipo | Horario |
+|---------|------|---------|
+| `enviarRadarDiario` | Basado en hora | Todos los días, 9:00–10:00 |
+| `comprobarAlertasIndividuales` | Basado en hora | Cada hora |
+| `enviarRecordatorioAleatorio` | Basado en hora | Todos los días, 21:00–22:00 |
 
-1. Abre el Google Sheet
-2. **Extensiones → Apps Script**
-3. Verifica que el código está actualizado
+## Estructura del Google Sheet
 
----
+Cada fila de las hojas "Bunker" representa una empresa. Las columnas relevantes (a partir de la fila 4):
 
-### 5. Bajar cambios de Google a tu PC
+| Col | Campo |
+|-----|-------|
+| B | Nombre |
+| C | Ticker |
+| E | Decisión (COMPRA GANGA / BUENA COMPRA / ESPERAR) |
+| G | Precio actual |
+| L | Precio ganga (objetivo con margen de seguridad) |
+| N | Descuento sin margen |
+| O | Descuento con margen |
+| Q | Puesto en ranking |
+| U | Estado de última notificación |
+| V | Fecha de última notificación |
 
-Si modificas algo directamente en Apps Script y quieres sincronizarlo:
+Las hojas "Ranking" ordenan las empresas de mayor a menor descuento con margen y alimentan el radar diario.
 
-```bash
-clasp pull
-```
+## Aviso legal
 
----
-
-### 6. Reautenticación (si caduca la sesión)
-
-```bash
-clasp login
-```
-
----
-
-## Referencia rápida
-
-| Acción | Comando |
-|---|---|
-| Abrir Claude Code | `claude` |
-| Guardar en GitHub | `git add . && git commit -m "mensaje" && git push` |
-| Subir a Google | `clasp push` |
-| Bajar de Google | `clasp pull` |
-| Ver estado de archivos | `git status` |
-| Ver historial de cambios | `git log --oneline` |
+El contenido generado por este sistema es informativo. No constituye asesoramiento financiero ni recomendación de compra o venta de ningún activo.
