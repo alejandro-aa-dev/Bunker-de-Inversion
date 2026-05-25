@@ -1,0 +1,412 @@
+/**
+ * ============================================================
+ * TERMINAL BÚNKER DE INVERSIÓN v9
+ * ============================================================
+ * v9: Radar diario filtra empresas con descuento con margen negativo
+ * ============================================================
+ */
+
+const CONFIG = {
+  HOJA_USA:      "Bunker de inversion USA",
+  HOJA_EXUSA:    "Bunker de inversion exUSA",
+  RANKING_USA:   "Ranking USA",
+  RANKING_EXUSA: "Ranking exUSA",
+  CHAT_ID: "-1003890521410",
+  DISCLAIMER: "⚖️ *Aviso Legal: El contenido de este canal es informativo. No constituye asesoramiento financiero ni recomendación de compra.*"
+};
+
+// Columnas Bunker (0-indexed, getValues desde fila 4)
+const BCOLS = {
+  NOMBRE:          1,   // B
+  TICKER:          2,   // C
+  DECISION:        4,   // E
+  PRECIO_ACTUAL:   6,   // G
+  PRECIO_GANGA:   11,   // L
+  DESC_SIN:       13,   // N
+  DESC_CON:       14,   // O
+  PUESTO:         16,   // Q
+  FECHA_ULT_GANGA:19,   // T
+  ESTADO_NOTIF:   20,   // U
+  FECHA_NOTIF:    21    // V
+};
+
+// Columnas Ranking (0-indexed, getValues desde fila 2)
+const RCOLS = {
+  PUESTO:    0,  // A
+  NOMBRE:    1,  // B
+  TICKER:    2,  // C
+  POTENCIAL: 3,  // D
+  DECISION:  4,  // E
+  MARGEN:    6   // G
+};
+
+function normalizarEstado(str) {
+  if (!str) return "";
+  return String(str).replace(/[^\w\sÀ-ÿ]/gu, "").trim().toUpperCase();
+}
+
+function esEstadoAlerta(decision) {
+  const d = normalizarEstado(decision);
+  return d.includes("COMPRA GANGA") || d.includes("BUENA COMPRA");
+}
+
+function formatPct(val) {
+  const n = (Number(val) || 0) * 100;
+  return (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+}
+
+/**
+ * 1. RADAR DIARIO — Top 5 USA + exUSA (9:00 AM, L-V)
+ */
+function enviarRadarDiario() {
+  const hoy = new Date();
+  if (hoy.getDay() === 0 || hoy.getDay() === 6) return;
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const shUSA   = ss.getSheetByName(CONFIG.HOJA_USA);
+  const shexUSA = ss.getSheetByName(CONFIG.HOJA_EXUSA);
+  const fechaHoyStr = Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd/MM/yyyy");
+
+  if (shUSA.getRange("AI4").getDisplayValue() === fechaHoyStr) return;
+
+  const topUSA   = obtenerRanking(CONFIG.RANKING_USA,   CONFIG.HOJA_USA,   5);
+  const topexUSA = obtenerRanking(CONFIG.RANKING_EXUSA, CONFIG.HOJA_EXUSA, 5);
+
+  const frasesApertura = [
+    "🛰️ *SISTEMA DE RADAR: OPORTUNIDADES REALES*",
+    "☕ *Buenos días. Mercados despertando...* Las mejores opciones para hoy:",
+    "☀️ *Nueva jornada financiera.* Mejores gangas del Búnker:",
+    "📊 *Radar matutino listo.* Top empresas con mayor descuento:"
+  ];
+  const saludo = frasesApertura[Math.floor(Math.random() * frasesApertura.length)];
+
+  let msg = `${saludo}\n_Actualización: ${fechaHoyStr}_\n\n`;
+  msg += "🇺🇸 *TOP 5 GANGAS USA*\n";
+  msg += topUSA.length
+    ? topUSA.map(op => construirLineaRanking(op, "$")).join("")
+    : "_No hay empresas en rango hoy._\n";
+  msg += "\n🌍 *TOP 5 GANGAS exUSA*\n";
+  msg += topexUSA.length
+    ? topexUSA.map(op => construirLineaRanking(op, "€")).join("")
+    : "_No hay empresas en rango hoy._\n";
+  msg += "\n" + CONFIG.DISCLAIMER;
+
+  if (ejecutarEnvio(msg)) {
+    shUSA.getRange("AI4").setValue(fechaHoyStr);
+    shexUSA.getRange("AI4").setValue(fechaHoyStr);
+  }
+}
+
+function obtenerRanking(rankingHoja, bunkerHoja, top) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Leer Ranking para obtener top 5 y orden
+  const shRanking = ss.getSheetByName(rankingHoja);
+  if (!shRanking) { console.log("❌ Hoja no encontrada: " + rankingHoja); return []; }
+  const ultimaRanking = shRanking.getLastRow();
+  if (ultimaRanking < 2) return [];
+  const dataRanking = shRanking.getRange(2, 1, ultimaRanking - 1, 7).getValues();
+
+  const topItems = dataRanking
+    .map(row => ({
+      puesto:   row[RCOLS.PUESTO],
+      nombre:   String(row[RCOLS.NOMBRE]   || "").trim(),
+      ticker:   String(row[RCOLS.TICKER]   || "").trim(),
+      decision: String(row[RCOLS.DECISION] || "").trim()
+    }))
+    .filter(r => r.ticker && r.nombre && !isNaN(r.puesto) && r.puesto >= 1 && r.puesto <= top)
+    .sort((a, b) => a.puesto - b.puesto);
+
+  // Leer Bunker para obtener precios y descuentos por ticker
+  const shBunker = ss.getSheetByName(bunkerHoja);
+  const precioMap = {};
+  if (shBunker) {
+    const ultimaBunker = shBunker.getLastRow();
+    if (ultimaBunker >= 4) {
+      const dataBunker = shBunker.getRange(4, 1, ultimaBunker - 3, 16).getValues();
+      dataBunker.forEach(row => {
+        const t = String(row[BCOLS.TICKER] || "").trim();
+        if (t) {
+          precioMap[t] = {
+            precioActual: row[BCOLS.PRECIO_ACTUAL],
+            precioGanga:  row[BCOLS.PRECIO_GANGA],
+            descSin:      row[BCOLS.DESC_SIN],
+            descCon:      row[BCOLS.DESC_CON]
+          };
+        }
+      });
+    }
+  }
+
+  // Combinar y filtrar: solo empresas con descuento con margen positivo
+  return topItems
+    .map(r => ({
+      ...r,
+      ...(precioMap[r.ticker] || { precioActual: null, precioGanga: null, descSin: null, descCon: null })
+    }))
+    .filter(r => r.descCon === null || Number(r.descCon) > 0);
+}
+
+function construirLineaRanking(op, divisa) {
+  let bloque = `🏆 *#${op.puesto}* | *${op.nombre}* (${op.ticker})\n`;
+  if (op.precioActual !== null) {
+    bloque += `💰 Precio: ${Number(op.precioActual).toFixed(2)}${divisa} | Ganga: ${Number(op.precioGanga).toFixed(2)}${divisa}\n`;
+    bloque += `🛡️ Desc. con margen: *${formatPct(op.descCon)}*\n`;
+    bloque += `📈 Desc. sin margen: ${formatPct(op.descSin)}\n`;
+  } else {
+    bloque += `${op.decision}\n`;
+  }
+  bloque += `  ────────────────\n`;
+  return bloque;
+}
+
+/**
+ * 2. ALERTAS DE CAMBIO DE CONDICIÓN (cada hora)
+ * Seguro: 1 hora entre alertas de la misma acción
+ */
+function comprobarAlertasIndividuales() {
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  const hoy = new Date();
+  const UNA_HORA = 60 * 60 * 1000;
+
+  const hojas = [
+    { n: CONFIG.HOJA_USA,   e: "🇺🇸", d: "$" },
+    { n: CONFIG.HOJA_EXUSA, e: "🌍",  d: "€" }
+  ];
+
+  hojas.forEach(h => {
+    const sheet      = ss.getSheetByName(h.n);
+    const ultimaFila = sheet.getLastRow();
+    if (ultimaFila < 4) return;
+
+    const data = sheet.getRange(4, 1, ultimaFila - 3, 22).getValues();
+
+    data.forEach((fila, i) => {
+      const numFila      = i + 4;
+      const nombre       = fila[BCOLS.NOMBRE];
+      const ticker       = fila[BCOLS.TICKER];
+      const decision     = fila[BCOLS.DECISION];
+      const precioActual = fila[BCOLS.PRECIO_ACTUAL];
+      const precioGanga  = fila[BCOLS.PRECIO_GANGA];
+      const descSin      = fila[BCOLS.DESC_SIN];
+      const descCon      = fila[BCOLS.DESC_CON];
+      const puesto       = fila[BCOLS.PUESTO];
+      const estadoNotif  = fila[BCOLS.ESTADO_NOTIF];
+      const fechaNotif   = fila[BCOLS.FECHA_NOTIF];
+
+      if (!ticker || !esEstadoAlerta(decision)) return;
+      if (normalizarEstado(decision) === normalizarEstado(estadoNotif)) return;
+
+      // Reloj 1 hora
+      if (fechaNotif) {
+        const f = new Date(fechaNotif);
+        if (!isNaN(f.getTime()) && hoy.getTime() - f.getTime() < UNA_HORA) return;
+      }
+
+      const analisisIA = obtenerAnalisisGemini({ nombre, ticker });
+
+      let msg = `🔔 *ALERTA: ${decision}*\n`;
+      msg += `⚠️ _Cambio de condición detectado_\n\n`;
+      msg += `🏆 Puesto: *#${puesto}*\n`;
+      msg += `🚀 *${nombre}* (${ticker})\n`;
+      msg += `💰 Precio actual: ${Number(precioActual).toFixed(2)}${h.d}\n`;
+      msg += `🎯 Precio ganga: ${Number(precioGanga).toFixed(2)}${h.d}\n`;
+      msg += `🛡️ Desc. con margen: *${formatPct(descCon)}*\n`;
+      msg += `📈 Desc. sin margen: ${formatPct(descSin)}\n\n`;
+      msg += `💡 *Nota del Analista AI:*\n${analisisIA}\n\n`;
+      msg += CONFIG.DISCLAIMER;
+
+      if (ejecutarEnvio(msg)) {
+        sheet.getRange(numFila, BCOLS.ESTADO_NOTIF + 1).setValue(decision);
+        sheet.getRange(numFila, BCOLS.FECHA_NOTIF  + 1).setValue(new Date());
+        Utilities.sleep(1500);
+      }
+    });
+  });
+}
+
+/**
+ * 3. RECORDATORIO NOCTURNO — 2 gangas USA + 2 exUSA, cada 3 días (21:00)
+ */
+function enviarRecordatorioAleatorio() {
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  const hoy = new Date();
+  const fechaHoyStr = Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  const TRES_DIAS   = 3 * 24 * 60 * 60 * 1000;
+
+  const frasesCierre = hoy.getDay() >= 1 && hoy.getDay() <= 5
+    ? [
+        "🌙 *Wall Street cierra...* Gangas persistentes en el radar:",
+        "🔔 *Finaliza la sesión en Nueva York.* Empresas en zona de interés:",
+        "📉 *Tras el cierre de Wall Street,* estas joyas siguen a tiro:",
+        "☕ *Mercado en calma.* Repasamos las gangas del Búnker:"
+      ]
+    : ["🛋️ *Repaso de Fin de Semana.* Gangas que cumplen los requisitos del Búnker:"];
+
+  const saludo = frasesCierre[Math.floor(Math.random() * frasesCierre.length)];
+
+  const esFinde = hoy.getDay() === 0 || hoy.getDay() === 6;
+
+  const hojas = [
+    { n: CONFIG.HOJA_USA,   e: "🇺🇸", d: "$", max: esFinde ? 2 : 1 },
+    { n: CONFIG.HOJA_EXUSA, e: "🌍",  d: "€", max: esFinde ? 2 : 1 }
+  ];
+
+  const aEnviar = [];
+
+  hojas.forEach(h => {
+    const sheet         = ss.getSheetByName(h.n);
+    const celdaContador = sheet.getRange("AJ4");
+    const celdaFecha    = sheet.getRange("AK4");
+
+    if (celdaFecha.getDisplayValue() !== fechaHoyStr) {
+      celdaContador.setValue(0);
+      celdaFecha.setValue(fechaHoyStr);
+    }
+
+    let contadorHoy = parseInt(celdaContador.getValue()) || 0;
+    if (contadorHoy >= h.max) return;
+
+    const ultimaFila = sheet.getLastRow();
+    if (ultimaFila < 4) return;
+
+    const data = sheet.getRange(4, 1, ultimaFila - 3, 22).getValues();
+
+    const candidatas = data
+      .map((fila, idx) => ({
+        rowNum:        idx + 4,
+        nombre:        fila[BCOLS.NOMBRE],
+        ticker:        fila[BCOLS.TICKER],
+        decision:      fila[BCOLS.DECISION],
+        precioActual:  fila[BCOLS.PRECIO_ACTUAL],
+        precioGanga:   fila[BCOLS.PRECIO_GANGA],
+        descSin:       fila[BCOLS.DESC_SIN],
+        descCon:       fila[BCOLS.DESC_CON],
+        puesto:        fila[BCOLS.PUESTO],
+        fechaUltGanga: fila[BCOLS.FECHA_ULT_GANGA],
+        hoja: h
+      }))
+      .filter(e => {
+        if (!e.ticker) return false;
+        const d = normalizarEstado(e.decision);
+        const esGanga = d.includes("COMPRA GANGA") ||
+                        Number(e.precioActual) <= Number(e.precioGanga) * 1.0001;
+        if (!esGanga) return false;
+        if (!e.fechaUltGanga) return true;
+        return hoy.getTime() - new Date(e.fechaUltGanga).getTime() > TRES_DIAS;
+      });
+
+    while (candidatas.length > 0 && contadorHoy < h.max) {
+      const idx = Math.floor(Math.random() * candidatas.length);
+      aEnviar.push(candidatas.splice(idx, 1)[0]);
+      contadorHoy++;
+    }
+
+    celdaContador.setValue(contadorHoy);
+  });
+
+  if (aEnviar.length === 0) return;
+
+  // Enviar saludo como primer mensaje separado
+  ejecutarEnvio(saludo);
+  Utilities.sleep(1000);
+
+  aEnviar.forEach(sel => {
+    const analisisIA = obtenerAnalisisGemini(sel);
+
+    let msg = `🔥 *REPASO DIARIO DE CIERRE*\n\n`;
+    msg += `🏆 Puesto: *#${sel.puesto}*\n`;
+    msg += `🚀${sel.hoja.e} *${sel.nombre}* (${sel.ticker})\n`;
+    msg += `💰 Precio actual: ${Number(sel.precioActual).toFixed(2)}${sel.hoja.d}\n`;
+    msg += `🎯 Precio ganga: ${Number(sel.precioGanga).toFixed(2)}${sel.hoja.d}\n`;
+    msg += `🛡️ Desc. con margen: *${formatPct(sel.descCon)}*\n`;
+    msg += `📈 Desc. sin margen: ${formatPct(sel.descSin)}\n\n`;
+    msg += `💡 *Analista AI:*\n${analisisIA}\n\n`;
+    msg += CONFIG.DISCLAIMER;
+
+    if (ejecutarEnvio(msg)) {
+      ss.getSheetByName(sel.hoja.n)
+        .getRange(sel.rowNum, BCOLS.FECHA_ULT_GANGA + 1)
+        .setValue(new Date());
+      Utilities.sleep(2000);
+    }
+  });
+}
+
+/**
+ * MOTORES TÉCNICOS
+ */
+function obtenerAnalisisGemini(op) {
+  const apiKeys = [
+    'AIzaSyCpWTAoVHteFSMKN-1I7vVsARP1o6hbtZ0',
+    'AIzaSyBkU4Y70-xfqmD1kmCiEaND6rHkg7BNZHM',
+    'AIzaSyA8Naai3pv-DelgyWPbUywPb12LukAPd2c'
+  ];
+
+  const prompt =
+    `Actúa como inversor experto explicando a un amateur la empresa ${op.nombre} (${op.ticker}). ` +
+    `Responde EXACTAMENTE en este formato, máximo 15 palabras por punto:\n` +
+    `🏢 A qué se dedican: [Resumen]\n` +
+    `🏰 Por qué es un Castillo: [MOAT]\n` +
+    `😨 Por qué hay miedo: [Riesgo hoy]\n` +
+    `REGLA: Empieza directo en el primer emoji. Sin negritas. Sin texto adicional.`;
+
+  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  for (let k = 0; k < apiKeys.length; k++) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys[k]}`;
+      const res = UrlFetchApp.fetch(url, options);
+      const status = res.getResponseCode();
+
+      if (status === 200) {
+        const json = JSON.parse(res.getContentText());
+        const texto = json.candidates &&
+                      json.candidates[0] &&
+                      json.candidates[0].content &&
+                      json.candidates[0].content.parts &&
+                      json.candidates[0].content.parts[0] &&
+                      json.candidates[0].content.parts[0].text;
+        if (texto) {
+          console.log(`✓ Gemini OK con API #${k + 1}`);
+          return texto.trim();
+        }
+      } else if (status === 429) {
+        console.log(`⚠️ API #${k+1} rate limitada, esperando...`);
+        Utilities.sleep(2000);
+      }
+    } catch (e) {
+      console.log(`⚠️ API #${k+1} excepción: ${e}`);
+    }
+  }
+
+  console.log("❌ Gemini no disponible");
+  return "🏢 Análisis no disponible.\n🏰 Consulta el modelo directo.\n😨 Revisa noticias.";
+}
+
+function ejecutarEnvio(mensaje) {
+  const token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
+  if (!token) { console.log("❌ TELEGRAM_TOKEN no configurado"); return false; }
+  try {
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({ chat_id: CONFIG.CHAT_ID, text: mensaje, parse_mode: "Markdown" })
+    });
+    return res.getResponseCode() === 200;
+  } catch (e) {
+    console.log("Error Telegram: " + e);
+    return false;
+  }
+}
+
+function testGemini() {
+  const resultado = obtenerAnalisisGemini({ nombre: "Apple", ticker: "AAPL" });
+  console.log(resultado);
+}
