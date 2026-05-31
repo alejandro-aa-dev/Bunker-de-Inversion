@@ -226,30 +226,54 @@ function comprobarAlertasIndividuales() {
 }
 
 /**
- * 3. RECORDATORIO NOCTURNO — 2 gangas USA + 2 exUSA, cada 3 días (21:00)
+ * 3. RECORDATORIO NOCTURNO — 1 ganga USA + 1 exUSA, enfriamiento 3 días (21:00, L-V)
  */
 function enviarRecordatorioAleatorio() {
+  const hoy = new Date();
+  if (hoy.getDay() === 0 || hoy.getDay() === 6) return;
+
+  const frasesCierre = [
+    "🌙 *Wall Street cierra...* Gangas persistentes en el radar:",
+    "🔔 *Finaliza la sesión en Nueva York.* Empresas en zona de interés:",
+    "📉 *Tras el cierre de Wall Street,* estas joyas siguen a tiro:",
+    "☕ *Mercado en calma.* Repasamos las gangas del Búnker:"
+  ];
+  const saludo = frasesCierre[Math.floor(Math.random() * frasesCierre.length)];
+
+  _enviarRecordatorio(saludo, "🔥 *REPASO DIARIO DE CIERRE*");
+}
+
+/**
+ * 4. RECORDATORIO FIN DE SEMANA — 1 ganga USA + 1 exUSA, enfriamiento 3 días (sábado y domingo)
+ */
+function enviarRecordatorioFinDeSemana() {
+  const hoy = new Date();
+  if (hoy.getDay() !== 0 && hoy.getDay() !== 6) return;
+
+  const frasesFinde = [
+    "🛋️ *Fin de semana en el Búnker.* Gangas que no descansan:",
+    "📅 *Repaso del fin de semana.* Empresas en zona ganga:",
+    "🏖️ *Mercados cerrados, oportunidades abiertas.* Gangas del Búnker:",
+    "☕ *Análisis de fin de semana.* Joyas que siguen a precio de derribo:"
+  ];
+  const saludo = frasesFinde[Math.floor(Math.random() * frasesFinde.length)];
+
+  _enviarRecordatorio(saludo, "📅 *RECORDATORIO DE FIN DE SEMANA*");
+}
+
+/**
+ * Motor compartido para recordatorio nocturno y de fin de semana.
+ * Máx 1 USA + 1 exUSA por día, enfriamiento de 3 días por empresa.
+ */
+function _enviarRecordatorio(saludo, cabecera) {
   const ss  = SpreadsheetApp.getActiveSpreadsheet();
   const hoy = new Date();
   const fechaHoyStr = Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd/MM/yyyy");
   const TRES_DIAS   = 3 * 24 * 60 * 60 * 1000;
 
-  const frasesCierre = hoy.getDay() >= 1 && hoy.getDay() <= 5
-    ? [
-        "🌙 *Wall Street cierra...* Gangas persistentes en el radar:",
-        "🔔 *Finaliza la sesión en Nueva York.* Empresas en zona de interés:",
-        "📉 *Tras el cierre de Wall Street,* estas joyas siguen a tiro:",
-        "☕ *Mercado en calma.* Repasamos las gangas del Búnker:"
-      ]
-    : ["🛋️ *Repaso de Fin de Semana.* Gangas que cumplen los requisitos del Búnker:"];
-
-  const saludo = frasesCierre[Math.floor(Math.random() * frasesCierre.length)];
-
-  const esFinde = hoy.getDay() === 0 || hoy.getDay() === 6;
-
   const hojas = [
-    { n: CONFIG.HOJA_USA,   e: "🇺🇸", d: "$", max: esFinde ? 2 : 1 },
-    { n: CONFIG.HOJA_EXUSA, e: "🌍",  d: "€", max: esFinde ? 2 : 1 }
+    { n: CONFIG.HOJA_USA,   e: "🇺🇸", d: "$", max: 1 },
+    { n: CONFIG.HOJA_EXUSA, e: "🌍",  d: "€", max: 1 }
   ];
 
   const aEnviar = [];
@@ -307,14 +331,13 @@ function enviarRecordatorioAleatorio() {
 
   if (aEnviar.length === 0) return;
 
-  // Enviar saludo como primer mensaje separado
   ejecutarEnvio(saludo);
   Utilities.sleep(1000);
 
   aEnviar.forEach(sel => {
     const analisisIA = obtenerAnalisisGemini(sel);
 
-    let msg = `🔥 *REPASO DIARIO DE CIERRE*\n\n`;
+    let msg = `${cabecera}\n\n`;
     msg += `🏆 Puesto: *#${sel.puesto}*\n`;
     msg += `🚀${sel.hoja.e} *${sel.nombre}* (${sel.ticker})\n`;
     msg += `💰 Precio actual: ${Number(sel.precioActual).toFixed(2)}${sel.hoja.d}\n`;
