@@ -375,7 +375,10 @@ function obtenerAnalisisGemini(op) {
     `😨 Por qué hay miedo: [Riesgo hoy]\n` +
     `REGLA: Empieza directo en el primer emoji. Sin negritas. Sin texto adicional.`;
 
-  const payload = { contents: [{ parts: [{ text: prompt }] }] };
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { thinkingConfig: { thinkingBudget: 0 } }
+  };
   const options = {
     method: "post",
     contentType: "application/json",
