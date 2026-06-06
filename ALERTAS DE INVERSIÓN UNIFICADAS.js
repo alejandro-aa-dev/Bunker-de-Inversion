@@ -25,7 +25,7 @@ const BCOLS = {
   DESC_SIN:       13,   // N
   DESC_CON:       14,   // O
   PUESTO:         16,   // Q
-  FECHA_ULT_GANGA:19,   // T
+  FECHA_ULT_GANGA:17,   // R — Última Compra Ganga
   ESTADO_NOTIF:   20,   // U
   FECHA_NOTIF:    21    // V
 };
