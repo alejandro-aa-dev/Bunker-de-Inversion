@@ -362,9 +362,9 @@ function _enviarRecordatorio(saludo, cabecera) {
 function obtenerAnalisisGemini(op) {
   const props = PropertiesService.getScriptProperties();
   const apiKeys = [
-    props.getProperty('GEMINI_API_KEY_1'),
-    props.getProperty('GEMINI_API_KEY_2'),
-    props.getProperty('GEMINI_API_KEY_3')
+    props.getProperty('GEMINI_API_KEY1'),
+    props.getProperty('GEMINI_API_KEY2'),
+    props.getProperty('GEMINI_API_KEY3')
   ].filter(Boolean);
 
   const prompt =
@@ -376,8 +376,7 @@ function obtenerAnalisisGemini(op) {
     `REGLA: Empieza directo en el primer emoji. Sin negritas. Sin texto adicional.`;
 
   const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { thinkingConfig: { thinkingBudget: 0 } }
+    contents: [{ parts: [{ text: prompt }] }]
   };
   const options = {
     method: "post",
@@ -388,18 +387,19 @@ function obtenerAnalisisGemini(op) {
 
   for (let k = 0; k < apiKeys.length; k++) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys[k]}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKeys[k]}`;
       const res = UrlFetchApp.fetch(url, options);
       const status = res.getResponseCode();
 
       if (status === 200) {
         const json = JSON.parse(res.getContentText());
-        const texto = json.candidates &&
+        const parts = json.candidates &&
                       json.candidates[0] &&
                       json.candidates[0].content &&
-                      json.candidates[0].content.parts &&
-                      json.candidates[0].content.parts[0] &&
-                      json.candidates[0].content.parts[0].text;
+                      json.candidates[0].content.parts;
+        // Buscar la primera parte que NO sea thinking (thought !== true)
+        const parte = parts && (parts.find(p => !p.thought) || parts[0]);
+        const texto = parte && parte.text;
         if (texto) {
           console.log(`✓ Gemini OK con API #${k + 1}`);
           return texto.trim();
@@ -407,6 +407,8 @@ function obtenerAnalisisGemini(op) {
       } else if (status === 429) {
         console.log(`⚠️ API #${k+1} rate limitada, esperando...`);
         Utilities.sleep(2000);
+      } else {
+        console.log(`⚠️ API #${k+1} error ${status}: ${res.getContentText()}`);
       }
     } catch (e) {
       console.log(`⚠️ API #${k+1} excepción: ${e}`);
