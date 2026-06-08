@@ -344,6 +344,8 @@ function _enviarRecordatorio(saludo, cabecera) {
       }))
       .filter(e => {
         if (!e.ticker) return false;
+        const puestoNum = Number(e.puesto);
+        if (!e.puesto || isNaN(puestoNum) || puestoNum < 1) return false;
         const d = normalizarEstado(e.decision);
         const esGanga = d.includes("COMPRA GANGA") ||
                         Number(e.precioActual) <= Number(e.precioGanga) * 1.0001;
@@ -393,6 +395,20 @@ function _enviarRecordatorio(saludo, cabecera) {
  */
 function obtenerAnalisisGemini(op) {
   const props = PropertiesService.getScriptProperties();
+
+  // Cache 24h por ticker para no agotar cuota
+  const cacheKey = `GEMINI_CACHE_${op.ticker}`;
+  const cached = props.getProperty(cacheKey);
+  if (cached) {
+    try {
+      const { text, ts } = JSON.parse(cached);
+      if (Date.now() - ts < 24 * 60 * 60 * 1000) {
+        console.log(`✓ Gemini cache hit: ${op.ticker}`);
+        return text;
+      }
+    } catch (e) {}
+  }
+
   const apiKeys = [
     props.getProperty('GEMINI_API_KEY1'),
     props.getProperty('GEMINI_API_KEY2'),
@@ -429,11 +445,11 @@ function obtenerAnalisisGemini(op) {
                       json.candidates[0] &&
                       json.candidates[0].content &&
                       json.candidates[0].content.parts;
-        // Buscar la primera parte que NO sea thinking (thought !== true)
         const parte = parts && (parts.find(p => !p.thought) || parts[0]);
         const texto = parte && parte.text;
         if (texto) {
           console.log(`✓ Gemini OK con API #${k + 1}`);
+          props.setProperty(cacheKey, JSON.stringify({ text: texto.trim(), ts: Date.now() }));
           return texto.trim();
         }
       } else if (status === 429) {
