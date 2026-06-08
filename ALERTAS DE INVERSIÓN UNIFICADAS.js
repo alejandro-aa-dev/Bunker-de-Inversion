@@ -1,8 +1,10 @@
 /**
  * ============================================================
- * TERMINAL BÚNKER DE INVERSIÓN v9
+ * TERMINAL BÚNKER DE INVERSIÓN v2.0
  * ============================================================
- * v9: Radar diario filtra empresas con descuento con margen negativo
+ * Solo empresas con potencial positivo (sin margen), ordenadas por
+ * rendimiento con margen. 3 filtros: calidad, balance y valoración.
+ * Valoración exhaustiva con 7 modelos según el tipo de empresa.
  * ============================================================
  */
 
@@ -15,7 +17,7 @@ const CONFIG = {
   DISCLAIMER: "⚖️ *Aviso Legal: El contenido de este canal es informativo. No constituye asesoramiento financiero ni recomendación de compra.*"
 };
 
-// Columnas Bunker (0-indexed, getValues desde fila 4)
+// Columnas Bunker (0-indexed, getValues desde fila 2)
 const BCOLS = {
   NOMBRE:          1,   // B
   TICKER:          2,   // C
@@ -122,8 +124,8 @@ function obtenerRanking(rankingHoja, bunkerHoja, top) {
   const precioMap = {};
   if (shBunker) {
     const ultimaBunker = shBunker.getLastRow();
-    if (ultimaBunker >= 4) {
-      const dataBunker = shBunker.getRange(4, 1, ultimaBunker - 3, 16).getValues();
+    if (ultimaBunker >= 2) {
+      const dataBunker = shBunker.getRange(2, 1, ultimaBunker - 1, 16).getValues();
       dataBunker.forEach(row => {
         const t = String(row[BCOLS.TICKER] || "").trim();
         if (t) {
@@ -177,12 +179,12 @@ function comprobarAlertasIndividuales() {
   hojas.forEach(h => {
     const sheet      = ss.getSheetByName(h.n);
     const ultimaFila = sheet.getLastRow();
-    if (ultimaFila < 4) return;
+    if (ultimaFila < 2) return;
 
-    const data = sheet.getRange(4, 1, ultimaFila - 3, 22).getValues();
+    const data = sheet.getRange(2, 1, ultimaFila - 1, 22).getValues();
 
     data.forEach((fila, i) => {
-      const numFila      = i + 4;
+      const numFila      = i + 2;
       const nombre       = fila[BCOLS.NOMBRE];
       const ticker       = fila[BCOLS.TICKER];
       const decision     = fila[BCOLS.DECISION];
@@ -262,6 +264,36 @@ function enviarRecordatorioFinDeSemana() {
 }
 
 /**
+ * 5. RECORDATORIO SEMANAL — Lunes por la mañana, explicación del bot
+ */
+function enviarRecordatorioSemanal() {
+  const hoy = new Date();
+  if (hoy.getDay() !== 1) return;
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(CONFIG.HOJA_USA);
+  const celdaSemana = sheet.getRange("AL4");
+  const fechaHoyStr = Utilities.formatDate(hoy, Session.getScriptTimeZone(), "dd/MM/yyyy");
+
+  if (celdaSemana.getDisplayValue() === fechaHoyStr) return;
+
+  const msg =
+    `🤖 *BÚNKER DE INVERSIÓN v2.0 — Cómo funciona*\n\n` +
+    `Solo aparecen empresas con *potencial positivo* (sin margen de seguridad), ordenadas por rendimiento con margen.\n\n` +
+    `Pasan 3 filtros:\n` +
+    `✅ Calidad (Moat)\n` +
+    `✅ Balance financiero sólido\n` +
+    `✅ Valoración razonable\n\n` +
+    `Cada empresa se valora con *uno de 7 modelos* según su tipo: DCF, múltiplos, Graham, activos netos...\n\n` +
+    `Solo las que superan todo llegan aquí.\n\n` +
+    CONFIG.DISCLAIMER;
+
+  if (ejecutarEnvio(msg)) {
+    celdaSemana.setValue(fechaHoyStr);
+  }
+}
+
+/**
  * Motor compartido para recordatorio nocturno y de fin de semana.
  * Máx 1 USA + 1 exUSA por día, enfriamiento de 3 días por empresa.
  */
@@ -292,13 +324,13 @@ function _enviarRecordatorio(saludo, cabecera) {
     if (contadorHoy >= h.max) return;
 
     const ultimaFila = sheet.getLastRow();
-    if (ultimaFila < 4) return;
+    if (ultimaFila < 2) return;
 
-    const data = sheet.getRange(4, 1, ultimaFila - 3, 22).getValues();
+    const data = sheet.getRange(2, 1, ultimaFila - 1, 22).getValues();
 
     const candidatas = data
       .map((fila, idx) => ({
-        rowNum:        idx + 4,
+        rowNum:        idx + 2,
         nombre:        fila[BCOLS.NOMBRE],
         ticker:        fila[BCOLS.TICKER],
         decision:      fila[BCOLS.DECISION],
