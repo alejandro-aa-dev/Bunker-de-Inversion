@@ -453,7 +453,7 @@ function obtenerAnalisisGemini(op) {
           return texto.trim();
         }
       } else if (status === 429) {
-        console.log(`⚠️ API #${k+1} rate limitada, esperando...`);
+        console.log(`⚠️ API #${k+1} rate limitada: ${res.getContentText()}`);
         Utilities.sleep(2000);
       } else {
         console.log(`⚠️ API #${k+1} error ${status}: ${res.getContentText()}`);
