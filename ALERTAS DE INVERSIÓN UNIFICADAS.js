@@ -435,7 +435,7 @@ function obtenerAnalisisGemini(op) {
 
   for (let k = 0; k < apiKeys.length; k++) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKeys[k]}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKeys[k]}`;
       const res = UrlFetchApp.fetch(url, options);
       const status = res.getResponseCode();
 
