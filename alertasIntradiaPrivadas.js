@@ -73,7 +73,7 @@ var CFG_INTRA = {
   RSI_PERIODO: 14,                         // RSI estándar de 14 sesiones
   RSI_SOBREVENTA: 30,                      // RSI < 30 → sobreventa
   RSI_SOBRECOMPRA: 70,                     // RSI > 70 → sobrecompra
-  RSI_DIAS_HISTORICO: 35,                  // días naturales pedidos (garantiza ≥15 sesiones)
+  RSI_DIAS_HISTORICO: 150,                 // días naturales pedidos (~100 sesiones, para que el suavizado de Wilder converja como en TradingView)
   RSI_COOLDOWN_MS: 2 * 60 * 60 * 1000,     // 2 horas entre alertas del mismo ticker
   // Hoja oculta con una fórmula GOOGLEFINANCE PERSISTENTE por ticker (bloques de
   // 3 columnas). No borrar: las fórmulas escritas por script no se resuelven
@@ -435,7 +435,9 @@ function comprobarAlertasRSI() {
 }
 
 /**
- * RSI(14) clásico con medias simples sobre los últimos 15 cierres.
+ * RSI(14) con suavizado de Wilder, el mismo método que TradingView:
+ * media simple sobre las primeras 14 variaciones como semilla y suavizado
+ * exponencial (factor 1/14) sobre todo el resto del histórico (~100 sesiones).
  * Devuelve { rsi: número|null, error: string|null }.
  */
 function calcularRSI(ticker) {
@@ -452,15 +454,25 @@ function calcularRSI(ticker) {
       return { rsi: null, error: 'Datos insuficientes (' + cierres.length + ' cierres). ' +
                'Si la fórmula de ' + CFG_INTRA.RSI_HOJA_SCRATCH + ' es nueva, reintenta en unos minutos.' };
     }
-    var ult = cierres.slice(-(CFG_INTRA.RSI_PERIODO + 1));  // últimos 15 cierres → 14 cambios
-    var ganancias = 0, perdidas = 0;
-    for (var i = 1; i < ult.length; i++) {
-      var cambio = ult[i] - ult[i - 1];
-      if (cambio > 0) ganancias += cambio;
-      else perdidas += -cambio;
+    var n = CFG_INTRA.RSI_PERIODO;
+    var cambios = [];
+    for (var i = 1; i < cierres.length; i++) cambios.push(cierres[i] - cierres[i - 1]);
+
+    // Semilla: media simple de las primeras n variaciones
+    var promGan = 0, promPer = 0;
+    for (var s = 0; s < n; s++) {
+      if (cambios[s] > 0) promGan += cambios[s];
+      else promPer += -cambios[s];
     }
-    var promGan = ganancias / CFG_INTRA.RSI_PERIODO;
-    var promPer = perdidas / CFG_INTRA.RSI_PERIODO;
+    promGan /= n;
+    promPer /= n;
+
+    // Suavizado de Wilder sobre el resto del histórico
+    for (var w = n; w < cambios.length; w++) {
+      promGan = (promGan * (n - 1) + (cambios[w] > 0 ? cambios[w] : 0)) / n;
+      promPer = (promPer * (n - 1) + (cambios[w] < 0 ? -cambios[w] : 0)) / n;
+    }
+
     var rsi = (promPer === 0) ? 100 : 100 - (100 / (1 + promGan / promPer));
     return { rsi: Math.round(rsi * 100) / 100, error: null };
   } catch (e) {
@@ -528,10 +540,13 @@ function _asegurarFormulasRSI_(tickers) {
       nBloques++;
     }
     var celdaFormula = sh.getRange(2, colBase);
-    // (Re)escribir si falta la fórmula o quedó en #ERROR (p.ej. por separador
-    // de argumentos equivocado para el idioma de la hoja)
-    if (!celdaFormula.getFormula() ||
-        String(celdaFormula.getDisplayValue()).indexOf('#ERROR') === 0) {
+    var fActual = celdaFormula.getFormula();
+    // (Re)escribir si falta la fórmula, quedó en #ERROR (p.ej. por separador de
+    // argumentos equivocado para el idioma de la hoja) o pide un histórico
+    // distinto al configurado en RSI_DIAS_HISTORICO
+    if (!fActual ||
+        String(celdaFormula.getDisplayValue()).indexOf('#ERROR') === 0 ||
+        fActual.indexOf('TODAY()-' + CFG_INTRA.RSI_DIAS_HISTORICO) < 0) {
       _escribirFormulaGF_(celdaFormula, tickers[i]);
       nuevos = true;
     }
