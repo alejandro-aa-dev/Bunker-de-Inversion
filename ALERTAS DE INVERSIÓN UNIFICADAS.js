@@ -396,24 +396,23 @@ function _enviarRecordatorio(saludo, cabecera) {
 function obtenerAnalisisGemini(op) {
   const props = PropertiesService.getScriptProperties();
 
-  // Cache 24h por ticker para no agotar cuota
-  const cacheKey = `GEMINI_CACHE_${op.ticker}`;
+  const cacheKey = `GROQ_CACHE_${op.ticker}`;
   const cached = props.getProperty(cacheKey);
   if (cached) {
     try {
       const { text, ts } = JSON.parse(cached);
       if (Date.now() - ts < 24 * 60 * 60 * 1000) {
-        console.log(`✓ Gemini cache hit: ${op.ticker}`);
+        console.log(`✓ Groq cache hit: ${op.ticker}`);
         return text;
       }
     } catch (e) {}
   }
 
-  const apiKeys = [
-    props.getProperty('GEMINI_API_KEY1'),
-    props.getProperty('GEMINI_API_KEY2'),
-    props.getProperty('GEMINI_API_KEY3')
-  ].filter(Boolean);
+  const apiKey = props.getProperty('GROQ_API_KEY');
+  if (!apiKey) {
+    console.log("❌ GROQ_API_KEY no configurada");
+    return "🏢 Análisis no disponible.\n🏰 Consulta el modelo directo.\n😨 Revisa noticias.";
+  }
 
   const prompt =
     `Actúa como inversor experto explicando a un amateur la empresa ${op.nombre} (${op.ticker}). ` +
@@ -424,46 +423,40 @@ function obtenerAnalisisGemini(op) {
     `REGLA: Empieza directo en el primer emoji. Sin negritas. Sin texto adicional.`;
 
   const payload = {
-    contents: [{ parts: [{ text: prompt }] }]
+    model: "llama-3.1-8b-instant",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 200
   };
   const options = {
     method: "post",
     contentType: "application/json",
+    headers: { Authorization: "Bearer " + apiKey },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
 
-  for (let k = 0; k < apiKeys.length; k++) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKeys[k]}`;
-      const res = UrlFetchApp.fetch(url, options);
-      const status = res.getResponseCode();
+  try {
+    const res = UrlFetchApp.fetch("https://api.groq.com/openai/v1/chat/completions", options);
+    const status = res.getResponseCode();
 
-      if (status === 200) {
-        const json = JSON.parse(res.getContentText());
-        const parts = json.candidates &&
-                      json.candidates[0] &&
-                      json.candidates[0].content &&
-                      json.candidates[0].content.parts;
-        const parte = parts && (parts.find(p => !p.thought) || parts[0]);
-        const texto = parte && parte.text;
-        if (texto) {
-          console.log(`✓ Gemini OK con API #${k + 1}`);
-          props.setProperty(cacheKey, JSON.stringify({ text: texto.trim(), ts: Date.now() }));
-          return texto.trim();
-        }
-      } else if (status === 429) {
-        console.log(`⚠️ API #${k+1} rate limitada: ${res.getContentText()}`);
-        Utilities.sleep(2000);
-      } else {
-        console.log(`⚠️ API #${k+1} error ${status}: ${res.getContentText()}`);
+    if (status === 200) {
+      const json = JSON.parse(res.getContentText());
+      const texto = json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      if (texto) {
+        console.log(`✓ Groq OK`);
+        props.setProperty(cacheKey, JSON.stringify({ text: texto.trim(), ts: Date.now() }));
+        return texto.trim();
       }
-    } catch (e) {
-      console.log(`⚠️ API #${k+1} excepción: ${e}`);
+    } else if (status === 429) {
+      console.log(`⚠️ Groq rate limitada: ${res.getContentText()}`);
+    } else {
+      console.log(`⚠️ Groq error ${status}: ${res.getContentText()}`);
     }
+  } catch (e) {
+    console.log(`⚠️ Groq excepción: ${e}`);
   }
 
-  console.log("❌ Gemini no disponible");
+  console.log("❌ Groq no disponible");
   return "🏢 Análisis no disponible.\n🏰 Consulta el modelo directo.\n😨 Revisa noticias.";
 }
 
