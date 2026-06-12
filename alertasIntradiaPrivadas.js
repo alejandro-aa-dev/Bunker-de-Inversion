@@ -357,6 +357,21 @@ function _mapaDivisas_(ss) {
   return mapa;
 }
 
+/**
+ * Muestra en el registro el estado actual del anti-spam de alertas intradía.
+ * Ejecútala manualmente desde el editor de Apps Script cuando quieras.
+ */
+function verEstadoAntiSpam() {
+  var props = PropertiesService.getScriptProperties().getProperties();
+  var prefijos = ['INTRA_', 'SEMANAL_', 'MENSUAL_'];
+  var claves = Object.keys(props).filter(function(k) {
+    return prefijos.some(function(p) { return k.indexOf(p) === 0; });
+  }).sort();
+  if (!claves.length) { Logger.log('Anti-spam vacío (ninguna alerta enviada aún).'); return; }
+  Logger.log('=== Estado anti-spam alertas privadas ===');
+  claves.forEach(function(k) { Logger.log(k + ' = ' + props[k]); });
+}
+
 /** ¿Existe ya un trigger para la función dada? */
 function _existeTrigger_(nombreFuncion) {
   var ts = ScriptApp.getProjectTriggers();
