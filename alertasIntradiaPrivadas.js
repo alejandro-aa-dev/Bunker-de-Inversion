@@ -6,8 +6,11 @@
  * Expone:
  *   - comprobarAlertasIntradia()            → BLOQUE 1 (precio %) + BLOQUE 2 (valoración)
  *   - comprobarAlertasSemanalesMensuales()  → BLOQUE 3 (semanal / mensual)
+ *   - comprobarAlertasRSI()                 → BLOQUE 4 (RSI sobreventa/sobrecompra)
  *   - instalarTriggerIntradia()             → trigger cada 30 min (idempotente)
  *   - instalarTriggerSemanalMensual()       → trigger diario 17:00 (idempotente)
+ *   - instalarTriggerRSI()                  → trigger diario ~17:30 (idempotente)
+ *   - testRSI()                             → prueba manual del cálculo de RSI
  *
  * Reutiliza de otros archivos (NO se redefinen aquí):
  *   - enviarPrivado()                  (alertasPromediarSMA200.js)
@@ -39,6 +42,10 @@ var CFG_INTRA = {
   S_VARDIA: 10,  // K
   S_VARSEM: 11,  // L
   S_VARMES: 12,  // M
+  S_RSI: 13,        // N — RSI actual (escrito por Apps Script)
+  S_RSI_ESTADO: 14, // O — NORMAL / SOBREVENTA / SOBRECOMPRA
+  S_RSI_FECHA: 15,  // P — fecha/hora última actualización
+  S_RSI_SENAL: 16,  // Q — ENTRADA / SALIDA / NEUTRAL
 
   // --- Columnas hojas "Bunker de inversion *" (0-indexed) ---
   // (coinciden con BCOLS del archivo principal; se usan literales por claridad)
@@ -59,7 +66,15 @@ var CFG_INTRA = {
   CAIDA_MES: [-20, -30],         RESET_CAIDA_MES: -10,
   SUBIDA_MES: [20, 30],          RESET_SUBIDA_MES: 10,
 
-  VALOR_COOLDOWN_MS: 4 * 60 * 60 * 1000  // 4 horas
+  VALOR_COOLDOWN_MS: 4 * 60 * 60 * 1000,  // 4 horas
+
+  // --- BLOQUE 4: RSI ---
+  RSI_PERIODO: 14,                         // RSI estándar de 14 sesiones
+  RSI_SOBREVENTA: 30,                      // RSI < 30 → sobreventa
+  RSI_SOBRECOMPRA: 70,                     // RSI > 70 → sobrecompra
+  RSI_DIAS_HISTORICO: 35,                  // días naturales pedidos (garantiza ≥15 sesiones)
+  RSI_COOLDOWN_MS: 2 * 60 * 60 * 1000,     // 2 horas entre alertas del mismo ticker
+  RSI_HOJA_SCRATCH: '_scratchRSI'          // hoja oculta para resolver GOOGLEFINANCE histórico
 };
 
 // ===========================================================================
@@ -253,6 +268,188 @@ function comprobarAlertasSemanalesMensuales() {
 }
 
 // ===========================================================================
+// BLOQUE 4 — RSI sobreventa/sobrecompra (una vez al día, ~17:30 L-V)
+// ===========================================================================
+/**
+ * Recorre la cartera ("Alertas SMA200"), calcula el RSI(14) de cada ticker y:
+ *  - NORMAL → SOBREVENTA  : alerta ENTRADA (posible rebote alcista)
+ *  - NORMAL → SOBRECOMPRA : alerta SALIDA  (posible corrección bajista)
+ *  - SOBREVENTA/SOBRECOMPRA → NORMAL : aviso informativo de recuperación/corrección
+ * Escribe N (RSI), O (estado), P (fecha) y Q (señal) en la hoja.
+ * Anti-spam: máx. 1 alerta por ticker cada 2 h (Script Properties RSI_ALERT_*).
+ * OJO: usa GOOGLEFINANCE histórico vía hoja oculta → tarda unos segundos por ticker.
+ */
+function comprobarAlertasRSI() {
+  // Solo días laborables (L-V)
+  var diaIso = Number(Utilities.formatDate(new Date(), CFG_INTRA.ZONA, 'u'));
+  if (diaIso < CFG_INTRA.DIA_INI || diaIso > CFG_INTRA.DIA_FIN) return;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CFG_INTRA.HOJA_SMA);
+  if (!hoja) { Logger.log('[RSI] No existe la hoja: ' + CFG_INTRA.HOJA_SMA); return; }
+
+  var props = PropertiesService.getScriptProperties();
+  var divisas = _mapaDivisas_(ss);
+  var datos = hoja.getDataRange().getValues();
+
+  for (var i = 2; i < datos.length; i++) {  // fila 1=título(0), fila 2=cabeceras(1), datos desde índice 2
+    var f = datos[i];
+    var ticker = String(f[CFG_INTRA.S_TICKER] || '').trim();
+    if (!ticker) continue;
+
+    var res = calcularRSI(ticker);
+    if (res.rsi === null) {
+      // GOOGLEFINANCE falló o datos insuficientes: no tocar la fila (mantiene valores previos)
+      Logger.log('[RSI] ' + ticker + ': ' + res.error);
+      continue;
+    }
+
+    var accion = String(f[CFG_INTRA.S_ACCION] || '').trim();
+    var precio = _intraNum_(f[CFG_INTRA.S_PRECIO]);
+    var varDia = _intraNum_(f[CFG_INTRA.S_VARDIA]);
+    var div = divisas[ticker] || '';
+
+    var estadoNuevo = determinarEstadoRSI(res.rsi);
+    // Primera ejecución (columna O vacía): se parte de NORMAL para que una posición
+    // ya en sobreventa/sobrecompra genere alerta inmediata.
+    var estadoPrev = String(f[CFG_INTRA.S_RSI_ESTADO] || '').trim() || 'NORMAL';
+    var senal = String(f[CFG_INTRA.S_RSI_SENAL] || '').trim();
+
+    if (estadoNuevo !== estadoPrev) {
+      var lineaPrecio = '💰 Precio: ' + _fmt_(precio) + div + '\n' +
+                        '📊 Var% día: ' + (varDia === null ? '—' : (varDia >= 0 ? '+' : '') + _fmt_(varDia) + '%') + '\n';
+      var msg = null;
+
+      if (estadoNuevo === 'SOBREVENTA') {
+        senal = 'ENTRADA';
+        msg = '⬇️ *RSI ALERTA — SOBREVENTA*\n' +
+              '🏷️ ' + accion + ' (' + ticker + ')\n' +
+              '📐 RSI: *' + _fmt_(res.rsi) + '* (← Sobreventa, <' + CFG_INTRA.RSI_SOBREVENTA + ')\n' +
+              lineaPrecio +
+              '⏰ _Posible REBOTE alcista. Vigilar entrada._\n\n' +
+              CONFIG.DISCLAIMER;
+      } else if (estadoNuevo === 'SOBRECOMPRA') {
+        senal = 'SALIDA';
+        msg = '⬆️ *RSI ALERTA — SOBRECOMPRA*\n' +
+              '🏷️ ' + accion + ' (' + ticker + ')\n' +
+              '📐 RSI: *' + _fmt_(res.rsi) + '* (← Sobrecompra, >' + CFG_INTRA.RSI_SOBRECOMPRA + ')\n' +
+              lineaPrecio +
+              '⏰ _Posible CORRECCIÓN bajista. Vigilar salida._\n\n' +
+              CONFIG.DISCLAIMER;
+      } else if (estadoNuevo === 'NORMAL' &&
+                 (estadoPrev === 'SOBREVENTA' || estadoPrev === 'SOBRECOMPRA')) {
+        senal = 'NEUTRAL';
+        var transicion = estadoPrev === 'SOBREVENTA' ? 'Sobreventa → Normal' : 'Sobrecompra → Normal';
+        var lectura = estadoPrev === 'SOBREVENTA' ? 'Recuperación en marcha.' : 'Corrección en marcha.';
+        msg = 'ℹ️ *RSI — Cambio de estado*\n' +
+              '🏷️ ' + accion + ' (' + ticker + ')\n' +
+              '📐 RSI: ' + _fmt_(res.rsi) + ' (' + transicion + ')\n' +
+              lineaPrecio +
+              '_' + lectura + '_\n\n' +
+              CONFIG.DISCLAIMER;
+      }
+
+      if (msg) {
+        var clave = 'RSI_ALERT_' + ticker;
+        var ts = Number(props.getProperty(clave) || 0);
+        if (Date.now() - ts >= CFG_INTRA.RSI_COOLDOWN_MS) {
+          if (enviarPrivado(msg)) {
+            props.setProperty(clave, String(Date.now()));
+            Utilities.sleep(1000);
+          }
+        } else {
+          Logger.log('[RSI] ' + ticker + ': en cooldown, no se reenvía (se actualizan columnas).');
+        }
+      }
+    }
+
+    // Actualizar siempre N..Q (también cuando no hay transición ni alerta)
+    var fechaStr = Utilities.formatDate(new Date(), CFG_INTRA.ZONA, 'dd/MM HH:mm');
+    hoja.getRange(i + 1, CFG_INTRA.S_RSI + 1, 1, 4)
+        .setValues([[res.rsi, estadoNuevo, fechaStr, senal]]);
+  }
+}
+
+/**
+ * RSI(14) clásico con medias simples sobre los últimos 15 cierres.
+ * Devuelve { rsi: número|null, error: string|null }.
+ */
+function calcularRSI(ticker) {
+  try {
+    var cierres = _cierresHistoricos_(ticker, CFG_INTRA.RSI_DIAS_HISTORICO);
+    if (!cierres || cierres.length < CFG_INTRA.RSI_PERIODO + 1) {
+      return { rsi: null, error: 'Datos insuficientes (' + (cierres ? cierres.length : 0) + ' cierres)' };
+    }
+    var ult = cierres.slice(-(CFG_INTRA.RSI_PERIODO + 1));  // últimos 15 cierres → 14 cambios
+    var ganancias = 0, perdidas = 0;
+    for (var i = 1; i < ult.length; i++) {
+      var cambio = ult[i] - ult[i - 1];
+      if (cambio > 0) ganancias += cambio;
+      else perdidas += -cambio;
+    }
+    var promGan = ganancias / CFG_INTRA.RSI_PERIODO;
+    var promPer = perdidas / CFG_INTRA.RSI_PERIODO;
+    var rsi = (promPer === 0) ? 100 : 100 - (100 / (1 + promGan / promPer));
+    return { rsi: Math.round(rsi * 100) / 100, error: null };
+  } catch (e) {
+    return { rsi: null, error: String(e) };
+  }
+}
+
+/** Clasifica el RSI. 30 y 70 exactos cuentan como NORMAL. */
+function determinarEstadoRSI(rsi) {
+  if (rsi === null || rsi === undefined || isNaN(rsi)) return 'SIN_DATOS';
+  if (rsi < CFG_INTRA.RSI_SOBREVENTA) return 'SOBREVENTA';
+  if (rsi > CFG_INTRA.RSI_SOBRECOMPRA) return 'SOBRECOMPRA';
+  return 'NORMAL';
+}
+
+/**
+ * Cierres históricos de un ticker. GOOGLEFINANCE no es invocable desde Apps
+ * Script, así que se escribe la fórmula en una hoja oculta de trabajo, se
+ * fuerza el recálculo y se lee la tabla resultante (Date | Close).
+ */
+function _cierresHistoricos_(ticker, diasNaturales) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(CFG_INTRA.RSI_HOJA_SCRATCH);
+  if (!sh) {
+    sh = ss.insertSheet(CFG_INTRA.RSI_HOJA_SCRATCH);
+    sh.hideSheet();
+  }
+  // setFormula siempre usa sintaxis US (comas), independientemente del idioma de la hoja
+  sh.getRange(1, 1).setFormula(
+    '=GOOGLEFINANCE("' + ticker + '","close",TODAY()-' + diasNaturales + ',TODAY())');
+
+  var cierres = [];
+  for (var intento = 0; intento < 4; intento++) {
+    SpreadsheetApp.flush();
+    var vals = sh.getDataRange().getValues();
+    cierres = [];
+    for (var r = 1; r < vals.length; r++) {       // fila 0 = cabecera "Date | Close"
+      var c = vals[r][1];
+      if (typeof c === 'number' && !isNaN(c)) cierres.push(c);
+    }
+    if (cierres.length >= CFG_INTRA.RSI_PERIODO + 1) break;
+    Utilities.sleep(1000);                         // GOOGLEFINANCE aún cargando: reintentar
+  }
+  sh.getDataRange().clearContent();
+  return cierres;
+}
+
+/**
+ * Prueba manual: calcula el RSI de un par de tickers y lo muestra en el
+ * registro. Compara con TradingView (margen razonable: ±2 puntos).
+ */
+function testRSI() {
+  ['AAPL', 'MSFT'].forEach(function (tk) {
+    var r = calcularRSI(tk);
+    Logger.log(tk + ' → RSI: ' + r.rsi +
+               (r.error ? ' | error: ' + r.error : '') +
+               ' | Estado: ' + determinarEstadoRSI(r.rsi));
+  });
+}
+
+// ===========================================================================
 // INSTALADORES DE TRIGGERS (idempotentes)
 // ===========================================================================
 function instalarTriggerIntradia() {
@@ -272,6 +469,17 @@ function instalarTriggerSemanalMensual() {
   ScriptApp.newTrigger('comprobarAlertasSemanalesMensuales')
     .timeBased().everyDays(1).atHour(17).inTimezone(CFG_INTRA.ZONA).create();
   Logger.log('[INTRA] Trigger creado: diario 17:00 → comprobarAlertasSemanalesMensuales().');
+}
+
+function instalarTriggerRSI() {
+  if (_existeTrigger_('comprobarAlertasRSI')) {
+    Logger.log('[RSI] Trigger RSI ya existe.');
+    return;
+  }
+  // nearMinute(30) apunta a las ~17:30 (Apps Script da margen de ±15 min)
+  ScriptApp.newTrigger('comprobarAlertasRSI')
+    .timeBased().everyDays(1).atHour(17).nearMinute(30).inTimezone(CFG_INTRA.ZONA).create();
+  Logger.log('[RSI] Trigger creado: diario ~17:30 → comprobarAlertasRSI().');
 }
 
 // ===========================================================================
@@ -363,7 +571,7 @@ function _mapaDivisas_(ss) {
  */
 function verEstadoAntiSpam() {
   var props = PropertiesService.getScriptProperties().getProperties();
-  var prefijos = ['INTRA_', 'SEMANAL_', 'MENSUAL_'];
+  var prefijos = ['INTRA_', 'SEMANAL_', 'MENSUAL_', 'RSI_'];
   var claves = Object.keys(props).filter(function(k) {
     return prefijos.some(function(p) { return k.indexOf(p) === 0; });
   }).sort();
