@@ -27,7 +27,7 @@ const CFG_SMA = {
   // para obtenerlos (cada uno debe escribir antes algo a @alertagangabot).
   DESTINATARIOS_PRIVADOS: [
     "1193956123",   // Ale
-    // "000000000"  // Rubén (pendiente)
+    "8724674373",   // Rubén
   ]
 };
 
