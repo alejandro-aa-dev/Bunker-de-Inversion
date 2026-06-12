@@ -408,9 +408,9 @@ function obtenerAnalisisGemini(op) {
     } catch (e) {}
   }
 
-  const apiKey = props.getProperty('GROQ_API_KEY');
+  const apiKey = props.getProperty('GROQ_API_KEY1');
   if (!apiKey) {
-    console.log("❌ GROQ_API_KEY no configurada");
+    console.log("❌ GROQ_API_KEY1 no configurada");
     return "🏢 Análisis no disponible.\n🏰 Consulta el modelo directo.\n😨 Revisa noticias.";
   }
 
