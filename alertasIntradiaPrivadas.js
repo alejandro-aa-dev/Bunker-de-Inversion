@@ -467,23 +467,58 @@ function _asegurarFormulasRSI_(tickers) {
   var nuevos = false;
 
   for (var i = 0; i < tickers.length; i++) {
-    if (_bloqueRSI_(sh, tickers[i]) > 0) continue;   // ya tiene fórmula viva
-    var colBase = nBloques * 3 + 1;
-    if (sh.getMaxColumns() < colBase + 1) {
-      sh.insertColumnsAfter(sh.getMaxColumns(), colBase + 1 - sh.getMaxColumns());
+    var colBase = _bloqueRSI_(sh, tickers[i]);
+    if (colBase < 0) {
+      colBase = nBloques * 3 + 1;
+      if (sh.getMaxColumns() < colBase + 1) {
+        sh.insertColumnsAfter(sh.getMaxColumns(), colBase + 1 - sh.getMaxColumns());
+      }
+      sh.getRange(1, colBase).setValue(tickers[i]);
+      nBloques++;
     }
-    sh.getRange(1, colBase).setValue(tickers[i]);
-    // setFormula siempre usa sintaxis US (comas), sea cual sea el idioma de la hoja
-    sh.getRange(2, colBase).setFormula(
-      '=GOOGLEFINANCE("' + tickers[i] + '","close",TODAY()-' + CFG_INTRA.RSI_DIAS_HISTORICO + ',TODAY())');
-    nBloques++;
-    nuevos = true;
+    var celdaFormula = sh.getRange(2, colBase);
+    // (Re)escribir si falta la fórmula o quedó en #ERROR (p.ej. por separador
+    // de argumentos equivocado para el idioma de la hoja)
+    if (!celdaFormula.getFormula() ||
+        String(celdaFormula.getDisplayValue()).indexOf('#ERROR') === 0) {
+      _escribirFormulaGF_(celdaFormula, tickers[i]);
+      nuevos = true;
+    }
   }
   if (nuevos) {
     SpreadsheetApp.flush();
     Utilities.sleep(5000);   // margen por si GOOGLEFINANCE llega a resolver en esta ejecución
   }
   return sh;
+}
+
+/**
+ * Escribe la fórmula GOOGLEFINANCE probando el separador de argumentos.
+ * setFormula NO traduce el separador al idioma de la hoja: en una hoja en
+ * español los argumentos van con ";" y la coma deja la celda en #ERROR.
+ * Se prueba el separador memorizado (Script Properties); si la celda queda en
+ * #ERROR se reescribe con el otro y se memoriza el que funcionó.
+ */
+function _escribirFormulaGF_(celda, ticker) {
+  var props = PropertiesService.getScriptProperties();
+  var sep = props.getProperty('RSI_SEP_FORMULA') || ';';   // primera opción: ';' (hoja en español)
+  celda.setFormula(_formulaGF_(ticker, sep));
+  SpreadsheetApp.flush();
+  if (String(celda.getDisplayValue()).indexOf('#ERROR') === 0) {
+    sep = (sep === ';') ? ',' : ';';
+    celda.setFormula(_formulaGF_(ticker, sep));
+    SpreadsheetApp.flush();
+    if (String(celda.getDisplayValue()).indexOf('#ERROR') === 0) {
+      Logger.log('[RSI] No se pudo escribir la fórmula GOOGLEFINANCE para ' + ticker);
+      return;
+    }
+  }
+  props.setProperty('RSI_SEP_FORMULA', sep);
+}
+
+function _formulaGF_(ticker, sep) {
+  return '=GOOGLEFINANCE("' + ticker + '"' + sep + '"close"' + sep +
+         'TODAY()-' + CFG_INTRA.RSI_DIAS_HISTORICO + sep + 'TODAY())';
 }
 
 /** Lee los cierres ya resueltos del bloque de un ticker (antiguos primero). */
