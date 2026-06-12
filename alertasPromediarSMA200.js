@@ -9,8 +9,8 @@
  * (columna H "Señal / Tramo"); aquí solo se notifica y se evita
  * el spam con dos columnas de control (I = estado avisado, J = fecha).
  *
- * Reutiliza ejecutarEnvio() y CONFIG.DISCLAIMER del archivo
- * "ALERTAS DE INVERSIÓN UNIFICADAS".
+ * IMPORTANTE: estas alertas son de la cartera de Rubén y Ale, así que NO van al
+ * canal público; se envían por CHAT PRIVADO solo a ellos dos (enviarPrivado()).
  * ============================================================
  */
 
@@ -22,7 +22,13 @@ const CFG_SMA = {
   // avisa al instante si profundiza, y resetea cuando la señal desaparece.
   // columnas 0-indexed
   C: { ACCION:0, TICKER:1, PRECIO:2, SMA200:3, DIST:4, ALERTA:5,
-       SEMAFORO:6, SENAL:7, ESTADO_NOTIF:8, FECHA_NOTIF:9 }
+       SEMAFORO:6, SENAL:7, ESTADO_NOTIF:8, FECHA_NOTIF:9 },
+  // chat_id PRIVADOS de Ale y Rubén (NO el canal). Ejecuta verChatIdsRecientes()
+  // para obtenerlos (cada uno debe escribir antes algo a @alertagangabot).
+  DESTINATARIOS_PRIVADOS: [
+    // "123456789",   // Ale
+    // "987654321"    // Rubén
+  ]
 };
 
 /**
@@ -80,12 +86,64 @@ function comprobarAlertasPromediar() {
     msg += `🧭 _Antes de añadir: reconfirma la tesis (calidad + valoración) y respeta tu tamaño máximo de posición. La alerta sugiere MIRAR, no vaciar la liquidez._\n\n`;
     msg += CONFIG.DISCLAIMER;   // reutiliza el aviso legal del archivo principal
 
-    if (ejecutarEnvio(msg)) {   // reutiliza el envío a Telegram del archivo principal
+    if (enviarPrivado(msg)) {   // SOLO a los chats privados de Ale y Rubén
       sh.getRange(numFila, C.ESTADO_NOTIF + 1).setValue(senal);
       sh.getRange(numFila, C.FECHA_NOTIF  + 1).setValue(new Date());
       Utilities.sleep(1500);
     }
   });
+}
+
+/**
+ * Envía un mensaje (Markdown) SOLO a los chats privados de CFG_SMA.DESTINATARIOS_PRIVADOS.
+ * Devuelve true si al menos uno se envió con éxito.
+ */
+function enviarPrivado(mensaje) {
+  const token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
+  if (!token) { console.log("❌ TELEGRAM_TOKEN no configurado"); return false; }
+  const dest = CFG_SMA.DESTINATARIOS_PRIVADOS || [];
+  if (!dest.length) { console.log("❌ No hay destinatarios privados. Rellena CFG_SMA.DESTINATARIOS_PRIVADOS."); return false; }
+
+  let okAlguno = false;
+  dest.forEach(chatId => {
+    try {
+      const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "post",
+        contentType: "application/json",
+        muteHttpExceptions: true,
+        payload: JSON.stringify({ chat_id: chatId, text: mensaje, parse_mode: "Markdown" })
+      });
+      if (res.getResponseCode() === 200) okAlguno = true;
+      else console.log(`⚠️ Falló envío privado a ${chatId}: ${res.getContentText()}`);
+    } catch (e) {
+      console.log(`Error envío privado ${chatId}: ${e}`);
+    }
+  });
+  return okAlguno;
+}
+
+/**
+ * Ayuda para obtener los chat_id PRIVADOS: cada uno debe escribir algo a
+ * @alertagangabot y luego ejecutas esta función; mira el registro (Ver > Registros).
+ * (getUpdates solo muestra mensajes recientes y no funciona si el bot usa webhook.)
+ */
+function verChatIdsRecientes() {
+  const token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
+  if (!token) { console.log("❌ TELEGRAM_TOKEN no configurado"); return; }
+  const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/getUpdates`, { muteHttpExceptions: true });
+  const json = JSON.parse(res.getContentText());
+  if (!json.ok) { console.log("Error getUpdates: " + res.getContentText()); return; }
+  const vistos = {};
+  (json.result || []).forEach(u => {
+    const m = u.message || u.edited_message;
+    if (m && m.chat && m.chat.type === "private") {
+      vistos[m.chat.id] = `${m.chat.first_name || ""} ${m.chat.last_name || ""} (@${m.chat.username || "sin_usuario"})`;
+    }
+  });
+  const ids = Object.keys(vistos);
+  if (!ids.length) { console.log("Sin chats privados recientes. Cada uno debe escribir algo a @alertagangabot y reintentar."); return; }
+  console.log("Chats privados detectados (pega estos chat_id en DESTINATARIOS_PRIVADOS):");
+  ids.forEach(id => console.log(`  ${id}  →  ${vistos[id]}`));
 }
 
 /**

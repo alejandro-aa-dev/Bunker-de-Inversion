@@ -8,6 +8,17 @@
  * ============================================================
  */
 
+/* ── MODIFICACIÓN (jun 2026) ───────────────────────────────────────────────
+ * Señal de filtro en las alertas: la DECISIÓN de cada empresa ahora incluye un
+ * icono de filtro (🟢 = ANALIZAR / ❗ = VIGILAR) que se rellena en el Excel.
+ *  - Nuevo helper iconoFiltro(decision) que extrae ese icono.
+ *  - Se añade el icono junto al nombre en el radar (construirLineaRanking) y en
+ *    los recordatorios (_enviarRecordatorio).
+ *  - Leyenda del icono añadida al mensaje semanal.
+ * Archivo relacionado nuevo: alertasPromediarSMA200.js (alertas de promediar a
+ * la baja por SMA200 sobre la cartera).
+ * ──────────────────────────────────────────────────────────────────────────*/
+
 const CONFIG = {
   HOJA_USA:      "Bunker de inversion USA",
   HOJA_EXUSA:    "Bunker de inversion exUSA",
@@ -55,6 +66,12 @@ function esEstadoAlerta(decision) {
 function formatPct(val) {
   const n = (Number(val) || 0) * 100;
   return (n >= 0 ? "+" : "") + n.toFixed(2) + "%";
+}
+
+// Icono de filtro contenido en la DECISIÓN: 🟢 = pasó como ANALIZAR, ❗ = pasó como VIGILAR
+function iconoFiltro(decision) {
+  const m = String(decision || "").match(/🟢|❗/);
+  return m ? " " + m[0] : "";
 }
 
 /**
@@ -150,7 +167,7 @@ function obtenerRanking(rankingHoja, bunkerHoja, top) {
 }
 
 function construirLineaRanking(op, divisa) {
-  let bloque = `🏆 *#${op.puesto}* | *${op.nombre}* (${op.ticker})\n`;
+  let bloque = `🏆 *#${op.puesto}* | *${op.nombre}* (${op.ticker})${iconoFiltro(op.decision)}\n`;
   if (op.precioActual !== null) {
     bloque += `💰 Precio: ${Number(op.precioActual).toFixed(2)}${divisa} | Ganga: ${Number(op.precioGanga).toFixed(2)}${divisa}\n`;
     bloque += `🛡️ Desc. con margen: *${formatPct(op.descCon)}*\n`;
@@ -286,6 +303,8 @@ function enviarRecordatorioSemanal() {
     `✅ Valoración razonable\n\n` +
     `Cada empresa se valora con *uno de 7 modelos* según su tipo: DCF, múltiplos, Graham, activos netos...\n\n` +
     `Solo las que superan todo llegan aquí.\n\n` +
+    `🟢 = pasó el filtro como sólida (ANALIZAR)\n` +
+    `❗ = pasó el filtro pero en vigilancia (VIGILAR)\n\n` +
     CONFIG.DISCLAIMER;
 
   if (ejecutarEnvio(msg)) {
@@ -373,7 +392,7 @@ function _enviarRecordatorio(saludo, cabecera) {
 
     let msg = `${cabecera}\n\n`;
     msg += `🏆 Puesto: *#${sel.puesto}*\n`;
-    msg += `🚀${sel.hoja.e} *${sel.nombre}* (${sel.ticker})\n`;
+    msg += `🚀${sel.hoja.e} *${sel.nombre}* (${sel.ticker})${iconoFiltro(sel.decision)}\n`;
     msg += `💰 Precio actual: ${Number(sel.precioActual).toFixed(2)}${sel.hoja.d}\n`;
     msg += `🎯 Precio ganga: ${Number(sel.precioGanga).toFixed(2)}${sel.hoja.d}\n`;
     msg += `🛡️ Desc. con margen: *${formatPct(sel.descCon)}*\n`;
