@@ -582,9 +582,46 @@ function _leerCierresRSI_(sh, ticker) {
   var cierres = [];
   for (var r = 0; r < vals.length; r++) {
     var v = vals[r][0];
-    if (typeof v === 'number' && !isNaN(v)) cierres.push(v);
+    // Solo cierres POSITIVOS: GOOGLEFINANCE a veces cuela filas con 0 al final
+    // de la tabla, y un 0 simula una caída del 100% que hunde el RSI.
+    if (typeof v === 'number' && !isNaN(v) && v > 0) cierres.push(v);
   }
   return cierres;
+}
+
+/**
+ * DIAGNÓSTICO: muestra en el registro, por cada ticker de la hoja scratch,
+ * los últimos 15 cierres crudos (fecha=valor) y el RSI que sale de ellos.
+ * Útil para comparar con TradingView si algún RSI no cuadra.
+ */
+function verCierresRSI() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(CFG_INTRA.RSI_HOJA_SCRATCH);
+  if (!sh) { Logger.log('No existe la hoja ' + CFG_INTRA.RSI_HOJA_SCRATCH); return; }
+  var ultCol = sh.getLastColumn();
+  if (!ultCol) { Logger.log('Hoja scratch vacía.'); return; }
+  var etiquetas = sh.getRange(1, 1, 1, ultCol).getValues()[0];
+  var nFilas = sh.getLastRow() - 2;
+  if (nFilas < 1) { Logger.log('Sin datos en la hoja scratch.'); return; }
+
+  for (var c = 0; c < etiquetas.length; c += 3) {
+    var ticker = String(etiquetas[c]).trim();
+    if (!ticker) continue;
+    var vals = sh.getRange(3, c + 1, nFilas, 2).getValues();   // fecha | cierre
+    var filas = [];
+    for (var r = 0; r < vals.length; r++) {
+      var v = vals[r][1];
+      if (typeof v === 'number' && !isNaN(v)) {               // sin filtro >0: queremos VER los ceros
+        var fch = vals[r][0];
+        var fStr = (fch instanceof Date) ? Utilities.formatDate(fch, CFG_INTRA.ZONA, 'dd/MM') : String(fch);
+        filas.push(fStr + '=' + v);
+      }
+    }
+    var res = calcularRSI(ticker);
+    Logger.log(ticker + ' → RSI ' + res.rsi + (res.error ? ' (' + res.error + ')' : '') +
+               ' | últimos ' + Math.min(filas.length, CFG_INTRA.RSI_PERIODO + 1) + ' cierres: ' +
+               filas.slice(-(CFG_INTRA.RSI_PERIODO + 1)).join(', '));
+  }
 }
 
 /**
