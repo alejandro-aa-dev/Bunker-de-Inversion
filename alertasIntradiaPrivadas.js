@@ -32,8 +32,8 @@ var CFG_INTRA = {
 
   // Ventana intradía (minutos desde medianoche, hora Madrid)
   DIA_INI: 1, DIA_FIN: 5,          // 1=lunes ... 5=viernes (ISO)
-  HORA_INI_MIN: 14 * 60 + 30,      // 14:30
-  HORA_FIN_MIN: 18 * 60 + 30,      // 18:30
+  HORA_INI_MIN: 9 * 60,            // 9:00
+  HORA_FIN_MIN: 21 * 60,           // 21:00
 
   // --- Columnas hoja "Alertas SMA200" (0-indexed) ---
   S_ACCION: 0,   // A
@@ -81,7 +81,7 @@ var CFG_INTRA = {
 };
 
 // ===========================================================================
-// BLOQUE 1 + BLOQUE 2 — Intradía (cada 30 min, 14:30-18:30 L-V)
+// BLOQUE 1 + BLOQUE 2 — Intradía (cada 30 min, 9:00-21:00 L-V)
 // ===========================================================================
 function comprobarAlertasIntradia() {
   if (!_intraEnHorario_()) return;
@@ -586,7 +586,7 @@ function instalarTriggerRSI() {
 // HELPERS PRIVADOS (_intra* / _* para no colisionar con otros archivos)
 // ===========================================================================
 
-/** ¿L-V dentro de 14:30-18:30 hora Madrid? */
+/** ¿L-V dentro de 9:00-21:00 hora Madrid? */
 function _intraEnHorario_() {
   var ahora = new Date();
   var dia = Number(Utilities.formatDate(ahora, CFG_INTRA.ZONA, 'u'));
