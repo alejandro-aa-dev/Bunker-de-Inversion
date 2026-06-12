@@ -39,6 +39,7 @@ var CFG_INTRA = {
   S_ACCION: 0,   // A
   S_TICKER: 1,   // B
   S_PRECIO: 2,   // C
+  S_SMA200: 3,   // D — SMA200 (200 sesiones), define la tendencia de fondo
   S_VARDIA: 10,  // K
   S_VARSEM: 11,  // L
   S_VARMES: 12,  // M
@@ -274,10 +275,13 @@ function comprobarAlertasSemanalesMensuales() {
 // BLOQUE 4 — RSI sobreventa/sobrecompra (una vez al día, ~17:30 L-V)
 // ===========================================================================
 /**
- * Recorre la cartera ("Alertas SMA200"), calcula el RSI(14) de cada ticker y:
- *  - NORMAL → SOBREVENTA  : alerta ENTRADA (posible rebote alcista)
- *  - NORMAL → SOBRECOMPRA : alerta SALIDA  (posible corrección bajista)
- *  - SOBREVENTA/SOBRECOMPRA → NORMAL : aviso informativo de recuperación/corrección
+ * Recorre la cartera ("Alertas SMA200"), calcula el RSI(14) de cada ticker y
+ * CRUZA el extremo del RSI con la tendencia de fondo (precio vs SMA200):
+ *  - Sobreventa  + precio SOBRE SMA200 → 🟢 POSIBLE COMPRA (rebote en tendencia alcista)
+ *  - Sobreventa  + precio BAJO  SMA200 → ⚠️ cuchillo cayendo (solo vigilar, no compra limpia)
+ *  - Sobrecompra + precio BAJO  SMA200 → 🔴 POSIBLE VENTA / reducir (rebote agotado)
+ *  - Sobrecompra + precio SOBRE SMA200 → ⬆️ fuerza alcista (sin señal clara, no precipitarse)
+ *  - Vuelta a zona normal              → ℹ️ aviso informativo
  * Escribe N (RSI), O (estado), P (fecha) y Q (señal) en la hoja.
  * Anti-spam: máx. 1 alerta por ticker cada 2 h (Script Properties RSI_ALERT_*).
  * OJO: usa GOOGLEFINANCE histórico vía hoja oculta → tarda unos segundos por ticker.
@@ -328,27 +332,74 @@ function comprobarAlertasRSI() {
     var estadoPrev = String(f[CFG_INTRA.S_RSI_ESTADO] || '').trim() || 'NORMAL';
     var senal = String(f[CFG_INTRA.S_RSI_SENAL] || '').trim();
 
+    // Tendencia de fondo: precio vs SMA200 (columna D de la misma hoja)
+    var sma = _intraNum_(f[CFG_INTRA.S_SMA200]);
+    var tendencia = (precio !== null && sma !== null && sma > 0)
+                    ? (precio >= sma ? 'ALCISTA' : 'BAJISTA') : null;
+
     if (estadoNuevo !== estadoPrev) {
       var lineaPrecio = '💰 Precio: ' + _fmt_(precio) + div + '\n' +
                         '📊 Var% día: ' + (varDia === null ? '—' : (varDia >= 0 ? '+' : '') + _fmt_(varDia) + '%') + '\n';
+      var lineaTendencia = '';
+      if (tendencia) {
+        var distSma = (precio / sma - 1) * 100;
+        lineaTendencia = '📉 SMA200: ' + _fmt_(sma) + div + ' → precio ' +
+                         (tendencia === 'ALCISTA' ? 'POR ENCIMA' : 'POR DEBAJO') +
+                         ' (' + (distSma >= 0 ? '+' : '') + _fmt_(distSma) + '%)\n';
+      }
+      var cabecera = '🏷️ ' + accion + ' (' + ticker + ')\n';
       var msg = null;
 
       if (estadoNuevo === 'SOBREVENTA') {
-        senal = 'ENTRADA';
-        msg = '⬇️ *RSI ALERTA — SOBREVENTA*\n' +
-              '🏷️ ' + accion + ' (' + ticker + ')\n' +
-              '📐 RSI: *' + _fmt_(res.rsi) + '* (← Sobreventa, <' + CFG_INTRA.RSI_SOBREVENTA + ')\n' +
-              lineaPrecio +
-              '⏰ _Posible REBOTE alcista. Vigilar entrada._\n\n' +
-              CONFIG.DISCLAIMER;
+        if (tendencia === 'ALCISTA') {
+          senal = 'POSIBLE COMPRA';
+          msg = '🟢 *POSIBLE COMPRA* — sobreventa en tendencia alcista\n' +
+                cabecera +
+                '⬇️ RSI: *' + _fmt_(res.rsi) + '* (<' + CFG_INTRA.RSI_SOBREVENTA + ' → agotamiento vendedor)\n' +
+                lineaTendencia + lineaPrecio +
+                '🧭 _Sobreventa con el precio sobre su SMA200: buena relación riesgo/recompensa. Análisis propio y lo hablamos antes de entrar._\n\n' +
+                CONFIG.DISCLAIMER;
+        } else if (tendencia === 'BAJISTA') {
+          senal = 'VIGILAR (CUCHILLO)';
+          msg = '⚠️ *SOBREVENTA EN TENDENCIA BAJISTA* — cuidado\n' +
+                cabecera +
+                '⬇️ RSI: *' + _fmt_(res.rsi) + '* (<' + CFG_INTRA.RSI_SOBREVENTA + ')\n' +
+                lineaTendencia + lineaPrecio +
+                '🧭 _RSI en sobreventa PERO precio bajo su SMA200: posible cuchillo cayendo. NO es compra limpia, solo vigilar._\n\n' +
+                CONFIG.DISCLAIMER;
+        } else {
+          senal = 'ENTRADA';
+          msg = '⬇️ *RSI ALERTA — SOBREVENTA*\n' + cabecera +
+                '📐 RSI: *' + _fmt_(res.rsi) + '* (<' + CFG_INTRA.RSI_SOBREVENTA + ')\n' +
+                lineaPrecio +
+                '⏰ _Posible REBOTE alcista. Sin dato de SMA200 para confirmar tendencia._\n\n' +
+                CONFIG.DISCLAIMER;
+        }
       } else if (estadoNuevo === 'SOBRECOMPRA') {
-        senal = 'SALIDA';
-        msg = '⬆️ *RSI ALERTA — SOBRECOMPRA*\n' +
-              '🏷️ ' + accion + ' (' + ticker + ')\n' +
-              '📐 RSI: *' + _fmt_(res.rsi) + '* (← Sobrecompra, >' + CFG_INTRA.RSI_SOBRECOMPRA + ')\n' +
-              lineaPrecio +
-              '⏰ _Posible CORRECCIÓN bajista. Vigilar salida._\n\n' +
-              CONFIG.DISCLAIMER;
+        if (tendencia === 'BAJISTA') {
+          senal = 'POSIBLE VENTA';
+          msg = '🔴 *POSIBLE VENTA / REDUCIR* — sobrecompra en tendencia bajista\n' +
+                cabecera +
+                '⬆️ RSI: *' + _fmt_(res.rsi) + '* (>' + CFG_INTRA.RSI_SOBRECOMPRA + ' → rebote agotándose)\n' +
+                lineaTendencia + lineaPrecio +
+                '🧭 _Sobrecompra con el precio bajo su SMA200: si la tesis ya no convence, buen momento para reducir. Lo hablamos antes._\n\n' +
+                CONFIG.DISCLAIMER;
+        } else if (tendencia === 'ALCISTA') {
+          senal = 'FUERZA ALCISTA';
+          msg = '⬆️ *SOBRECOMPRA EN TENDENCIA ALCISTA* — fuerza, no venta\n' +
+                cabecera +
+                '⬆️ RSI: *' + _fmt_(res.rsi) + '* (>' + CFG_INTRA.RSI_SOBRECOMPRA + ')\n' +
+                lineaTendencia + lineaPrecio +
+                '🧭 _RSI alto pero precio sobre su SMA200: la empresa va lanzada. Posible corrección a corto; ni comprar ni vender con prisas._\n\n' +
+                CONFIG.DISCLAIMER;
+        } else {
+          senal = 'SALIDA';
+          msg = '⬆️ *RSI ALERTA — SOBRECOMPRA*\n' + cabecera +
+                '📐 RSI: *' + _fmt_(res.rsi) + '* (>' + CFG_INTRA.RSI_SOBRECOMPRA + ')\n' +
+                lineaPrecio +
+                '⏰ _Posible CORRECCIÓN bajista. Sin dato de SMA200 para confirmar tendencia._\n\n' +
+                CONFIG.DISCLAIMER;
+        }
       } else if (estadoNuevo === 'NORMAL' &&
                  (estadoPrev === 'SOBREVENTA' || estadoPrev === 'SOBRECOMPRA')) {
         senal = 'NEUTRAL';
