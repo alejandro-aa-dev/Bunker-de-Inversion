@@ -26,8 +26,8 @@ const CFG_SMA = {
   // chat_id PRIVADOS de Ale y Rubén (NO el canal). Ejecuta verChatIdsRecientes()
   // para obtenerlos (cada uno debe escribir antes algo a @alertagangabot).
   DESTINATARIOS_PRIVADOS: [
-    // "123456789",   // Ale
-    // "987654321"    // Rubén
+    "1193956123",   // Ale
+    // "000000000"  // Rubén (pendiente)
   ]
 };
 
