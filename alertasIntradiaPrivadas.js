@@ -74,7 +74,10 @@ var CFG_INTRA = {
   RSI_SOBRECOMPRA: 70,                     // RSI > 70 → sobrecompra
   RSI_DIAS_HISTORICO: 35,                  // días naturales pedidos (garantiza ≥15 sesiones)
   RSI_COOLDOWN_MS: 2 * 60 * 60 * 1000,     // 2 horas entre alertas del mismo ticker
-  RSI_HOJA_SCRATCH: '_scratchRSI'          // hoja oculta para resolver GOOGLEFINANCE histórico
+  // Hoja oculta con una fórmula GOOGLEFINANCE PERSISTENTE por ticker (bloques de
+  // 3 columnas). No borrar: las fórmulas escritas por script no se resuelven
+  // dentro de la misma ejecución, así que se dejan vivas y se leen ya calculadas.
+  RSI_HOJA_SCRATCH: '_scratchRSI'
 };
 
 // ===========================================================================
@@ -292,6 +295,16 @@ function comprobarAlertasRSI() {
   var divisas = _mapaDivisas_(ss);
   var datos = hoja.getDataRange().getValues();
 
+  // Asegurar de golpe las fórmulas GOOGLEFINANCE de TODOS los tickers en la
+  // hoja scratch. La primera vez pueden no resolverse aún (ver _asegurarFormulasRSI_);
+  // en la siguiente ejecución ya estarán calculadas y la lectura es instantánea.
+  var tickersCartera = [];
+  for (var t = 2; t < datos.length; t++) {
+    var tk = String(datos[t][CFG_INTRA.S_TICKER] || '').trim();
+    if (tk) tickersCartera.push(tk);
+  }
+  _asegurarFormulasRSI_(tickersCartera);
+
   for (var i = 2; i < datos.length; i++) {  // fila 1=título(0), fila 2=cabeceras(1), datos desde índice 2
     var f = datos[i];
     var ticker = String(f[CFG_INTRA.S_TICKER] || '').trim();
@@ -376,9 +389,17 @@ function comprobarAlertasRSI() {
  */
 function calcularRSI(ticker) {
   try {
-    var cierres = _cierresHistoricos_(ticker, CFG_INTRA.RSI_DIAS_HISTORICO);
-    if (!cierres || cierres.length < CFG_INTRA.RSI_PERIODO + 1) {
-      return { rsi: null, error: 'Datos insuficientes (' + (cierres ? cierres.length : 0) + ' cierres)' };
+    var sh = _asegurarFormulasRSI_([ticker]);
+    var cierres = _leerCierresRSI_(sh, ticker);
+    // Si la fórmula acaba de escribirse puede tardar en resolver: reintentar
+    for (var intento = 0; intento < 3 && cierres.length < CFG_INTRA.RSI_PERIODO + 1; intento++) {
+      Utilities.sleep(2000);
+      SpreadsheetApp.flush();
+      cierres = _leerCierresRSI_(sh, ticker);
+    }
+    if (cierres.length < CFG_INTRA.RSI_PERIODO + 1) {
+      return { rsi: null, error: 'Datos insuficientes (' + cierres.length + ' cierres). ' +
+               'Si la fórmula de ' + CFG_INTRA.RSI_HOJA_SCRATCH + ' es nueva, reintenta en unos minutos.' };
     }
     var ult = cierres.slice(-(CFG_INTRA.RSI_PERIODO + 1));  // últimos 15 cierres → 14 cambios
     var ganancias = 0, perdidas = 0;
@@ -404,35 +425,79 @@ function determinarEstadoRSI(rsi) {
   return 'NORMAL';
 }
 
-/**
- * Cierres históricos de un ticker. GOOGLEFINANCE no es invocable desde Apps
- * Script, así que se escribe la fórmula en una hoja oculta de trabajo, se
- * fuerza el recálculo y se lee la tabla resultante (Date | Close).
- */
-function _cierresHistoricos_(ticker, diasNaturales) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+/** Devuelve (creándola oculta si hace falta) la hoja scratch del RSI. */
+function _scratchRSI_(ss) {
   var sh = ss.getSheetByName(CFG_INTRA.RSI_HOJA_SCRATCH);
   if (!sh) {
     sh = ss.insertSheet(CFG_INTRA.RSI_HOJA_SCRATCH);
     sh.hideSheet();
   }
-  // setFormula siempre usa sintaxis US (comas), independientemente del idioma de la hoja
-  sh.getRange(1, 1).setFormula(
-    '=GOOGLEFINANCE("' + ticker + '","close",TODAY()-' + diasNaturales + ',TODAY())');
+  return sh;
+}
 
-  var cierres = [];
-  for (var intento = 0; intento < 4; intento++) {
-    SpreadsheetApp.flush();
-    var vals = sh.getDataRange().getValues();
-    cierres = [];
-    for (var r = 1; r < vals.length; r++) {       // fila 0 = cabecera "Date | Close"
-      var c = vals[r][1];
-      if (typeof c === 'number' && !isNaN(c)) cierres.push(c);
-    }
-    if (cierres.length >= CFG_INTRA.RSI_PERIODO + 1) break;
-    Utilities.sleep(1000);                         // GOOGLEFINANCE aún cargando: reintentar
+/**
+ * Columna base (1-indexed) del bloque de un ticker en la hoja scratch, o -1.
+ * Cada bloque ocupa 3 columnas: etiqueta+fecha | cierre | (separador).
+ */
+function _bloqueRSI_(sh, ticker) {
+  var ultCol = sh.getLastColumn();
+  if (!ultCol) return -1;
+  var etiquetas = sh.getRange(1, 1, 1, ultCol).getValues()[0];
+  for (var c = 0; c < etiquetas.length; c += 3) {
+    if (String(etiquetas[c]).trim() === ticker) return c + 1;
   }
-  sh.getDataRange().clearContent();
+  return -1;
+}
+
+/**
+ * Garantiza que cada ticker tenga su fórmula GOOGLEFINANCE viva en la hoja
+ * scratch. Las fórmulas son PERSISTENTES: las escritas por script no se
+ * resuelven dentro de la misma ejecución (quedan en "Loading..." hasta que el
+ * script termina), así que se dejan fijas para que Sheets las mantenga
+ * calculadas y las siguientes ejecuciones lean valores al instante.
+ * Estructura por bloque (colBase): fila 1 = ticker, fila 2 = fórmula
+ * (cabecera Date|Close), filas 3+ = datos.
+ */
+function _asegurarFormulasRSI_(tickers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = _scratchRSI_(ss);
+
+  var ultCol = sh.getLastColumn();
+  var nBloques = ultCol ? Math.ceil(ultCol / 3) : 0;
+  var nuevos = false;
+
+  for (var i = 0; i < tickers.length; i++) {
+    if (_bloqueRSI_(sh, tickers[i]) > 0) continue;   // ya tiene fórmula viva
+    var colBase = nBloques * 3 + 1;
+    if (sh.getMaxColumns() < colBase + 1) {
+      sh.insertColumnsAfter(sh.getMaxColumns(), colBase + 1 - sh.getMaxColumns());
+    }
+    sh.getRange(1, colBase).setValue(tickers[i]);
+    // setFormula siempre usa sintaxis US (comas), sea cual sea el idioma de la hoja
+    sh.getRange(2, colBase).setFormula(
+      '=GOOGLEFINANCE("' + tickers[i] + '","close",TODAY()-' + CFG_INTRA.RSI_DIAS_HISTORICO + ',TODAY())');
+    nBloques++;
+    nuevos = true;
+  }
+  if (nuevos) {
+    SpreadsheetApp.flush();
+    Utilities.sleep(5000);   // margen por si GOOGLEFINANCE llega a resolver en esta ejecución
+  }
+  return sh;
+}
+
+/** Lee los cierres ya resueltos del bloque de un ticker (antiguos primero). */
+function _leerCierresRSI_(sh, ticker) {
+  var colBase = _bloqueRSI_(sh, ticker);
+  if (colBase < 0) return [];
+  var nFilas = sh.getLastRow() - 2;                  // datos desde fila 3
+  if (nFilas < 1) return [];
+  var vals = sh.getRange(3, colBase + 1, nFilas, 1).getValues();  // columna de cierres
+  var cierres = [];
+  for (var r = 0; r < vals.length; r++) {
+    var v = vals[r][0];
+    if (typeof v === 'number' && !isNaN(v)) cierres.push(v);
+  }
   return cierres;
 }
 
