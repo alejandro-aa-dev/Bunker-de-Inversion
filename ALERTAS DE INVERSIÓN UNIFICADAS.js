@@ -184,8 +184,12 @@ function construirLineaRanking(op, divisa) {
  * Seguro: 1 hora entre alertas de la misma acción
  */
 function comprobarAlertasIndividuales() {
+  const ahora = new Date();
+  const hora = Number(Utilities.formatDate(ahora, 'Europe/Madrid', 'HH'));
+  if (hora < 8) return;
+
   const ss  = SpreadsheetApp.getActiveSpreadsheet();
-  const hoy = new Date();
+  const hoy = ahora;
   const UNA_HORA = 60 * 60 * 1000;
 
   const hojas = [
