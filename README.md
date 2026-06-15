@@ -31,10 +31,15 @@ Google Sheets (fuente de datos)
     ├── Hoja "Bunker de inversion USA"
     ├── Hoja "Bunker de inversion exUSA"
     ├── Hoja "Ranking USA"
-    └── Hoja "Ranking exUSA"
+    ├── Hoja "Ranking exUSA"
+    ├── Hoja "Alertas SMA200"      (cartera Rubén y Ale: precio, SMA200 y RSI)
+    ├── Hoja "Otras Empresas1"     (sistema de valoración personal de Ale: filtro + minibúnker)
+    └── Hoja "Otras Empresas2"     (alertas RSI + SMA200 de "otras empresas", layout A-Q)
 
 Google Apps Script (lógica y automatización)
-    ├── ALERTAS DE INVERSIÓN UNIFICADAS.js   ← motor principal
+    ├── ALERTAS DE INVERSIÓN UNIFICADAS.js   ← motor principal (canal público)
+    ├── alertasIntradiaPrivadas.js            ← alertas privadas: precio %, valoración y RSI+SMA200
+    ├── alertasPromediarSMA200.js             ← alertas privadas: promediar a la baja
     ├── enviarTelegram.js                     ← envío a Telegram
     ├── guardarTokenTelegram.js               ← configuración del bot
     ├── listarModelosDisponibles.js           ← utilidad Gemini
@@ -44,6 +49,33 @@ APIs externas
     ├── Telegram Bot API    ← canal de notificaciones
     └── Gemini 2.5 Flash    ← análisis IA de cada empresa
 ```
+
+## Alertas privadas (cartera de Rubén y Ale)
+
+Además del canal público, hay un bloque de alertas **privadas** que se envían solo
+a los chats de Ale y Rubén (`enviarPrivado()`), nunca al canal. Viven en
+`alertasIntradiaPrivadas.js` y `alertasPromediarSMA200.js`.
+
+### Señal RSI + SMA200 (multi-hoja)
+
+`comprobarAlertasRSI()` (trigger diario ~17:30, L-V) calcula el **RSI(14)** con
+suavizado de Wilder (mismo método que TradingView) y lo **cruza con la tendencia
+de fondo** (precio vs su SMA200). El cruce define la señal:
+
+| RSI | Precio vs SMA200 | Señal |
+|-----|------------------|-------|
+| Sobreventa (<30) | Por encima | 🟢 POSIBLE COMPRA (rebote en tendencia alcista) |
+| Sobreventa (<30) | Por debajo | ⚠️ VIGILAR — posible "cuchillo cayendo" |
+| Sobrecompra (>70) | Por debajo | 🔴 POSIBLE VENTA / reducir (rebote agotado) |
+| Sobrecompra (>70) | Por encima | ⬆️ FUERZA ALCISTA (sin prisa, ni comprar ni vender) |
+| Vuelta a 30–70 | — | ℹ️ aviso informativo de cambio de estado |
+
+La función procesa **todas las hojas listadas en `CFG_INTRA.HOJAS_RSI`** (por
+defecto `"Alertas SMA200"` del bünker grande y `"Otras Empresas2"`), siempre que
+compartan el mismo layout A-Q. Escribe en cada hoja las columnas **N** (RSI),
+**O** (estado), **P** (fecha) y **Q** (última señal). Anti-spam: máx. 1 alerta por
+hoja+ticker cada 2 h. Para añadir otra cartera basta con replicar el layout A-Q de
+"Alertas SMA200" en una hoja nueva y añadir su nombre a `CFG_INTRA.HOJAS_RSI`.
 
 ## Requisitos
 

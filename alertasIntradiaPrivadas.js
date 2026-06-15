@@ -30,6 +30,12 @@ var CFG_INTRA = {
   ZONA: 'Europe/Madrid',
   HOJA_SMA: 'Alertas SMA200',
 
+  // Hojas con layout A-Q (idéntico) que procesa el BLOQUE 4 (RSI + SMA200).
+  // 'Alertas SMA200' = bünker grande; 'Otras Empresas2' = sistema de valoración
+  // personal de Ale (empresas fuera del bünker). Para añadir otra hoja basta con
+  // replicar el layout A-Q y meter su nombre aquí.
+  HOJAS_RSI: ['Alertas SMA200', 'Otras Empresas2'],
+
   // Ventana intradía (minutos desde medianoche, hora Madrid)
   DIA_INI: 1, DIA_FIN: 5,          // 1=lunes ... 5=viernes (ISO)
   HORA_INI_MIN: 9 * 60,            // 9:00
@@ -275,15 +281,16 @@ function comprobarAlertasSemanalesMensuales() {
 // BLOQUE 4 — RSI sobreventa/sobrecompra (una vez al día, ~17:30 L-V)
 // ===========================================================================
 /**
- * Recorre la cartera ("Alertas SMA200"), calcula el RSI(14) de cada ticker y
+ * Recorre TODAS las hojas de CFG_INTRA.HOJAS_RSI (bünker grande "Alertas SMA200"
+ * + "Otras Empresas2", mismo layout A-Q), calcula el RSI(14) de cada ticker y
  * CRUZA el extremo del RSI con la tendencia de fondo (precio vs SMA200):
  *  - Sobreventa  + precio SOBRE SMA200 → 🟢 POSIBLE COMPRA (rebote en tendencia alcista)
  *  - Sobreventa  + precio BAJO  SMA200 → ⚠️ cuchillo cayendo (solo vigilar, no compra limpia)
  *  - Sobrecompra + precio BAJO  SMA200 → 🔴 POSIBLE VENTA / reducir (rebote agotado)
  *  - Sobrecompra + precio SOBRE SMA200 → ⬆️ fuerza alcista (sin señal clara, no precipitarse)
  *  - Vuelta a zona normal              → ℹ️ aviso informativo
- * Escribe N (RSI), O (estado), P (fecha) y Q (señal) en la hoja.
- * Anti-spam: máx. 1 alerta por ticker cada 2 h (Script Properties RSI_ALERT_*).
+ * Escribe N (RSI), O (estado), P (fecha) y Q (señal) en cada hoja.
+ * Anti-spam: máx. 1 alerta por hoja+ticker cada 2 h (Script Properties RSI_ALERT_*).
  * OJO: usa GOOGLEFINANCE histórico vía hoja oculta → tarda unos segundos por ticker.
  */
 function comprobarAlertasRSI() {
@@ -292,23 +299,42 @@ function comprobarAlertasRSI() {
   if (diaIso < CFG_INTRA.DIA_INI || diaIso > CFG_INTRA.DIA_FIN) return;
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var hoja = ss.getSheetByName(CFG_INTRA.HOJA_SMA);
-  if (!hoja) { Logger.log('[RSI] No existe la hoja: ' + CFG_INTRA.HOJA_SMA); return; }
-
   var props = PropertiesService.getScriptProperties();
   var divisas = _mapaDivisas_(ss);
-  var datos = hoja.getDataRange().getValues();
 
-  // Asegurar de golpe las fórmulas GOOGLEFINANCE de TODOS los tickers en la
-  // hoja scratch. La primera vez pueden no resolverse aún (ver _asegurarFormulasRSI_);
-  // en la siguiente ejecución ya estarán calculadas y la lectura es instantánea.
-  var tickersCartera = [];
-  for (var t = 2; t < datos.length; t++) {
-    var tk = String(datos[t][CFG_INTRA.S_TICKER] || '').trim();
-    if (tk) tickersCartera.push(tk);
+  // Recoge todas las hojas con layout A-Q (bünker grande + "Otras Empresas") y
+  // junta TODOS sus tickers para asegurar las fórmulas GOOGLEFINANCE de una sola
+  // pasada en la hoja scratch. La primera vez pueden no resolverse aún (ver
+  // _asegurarFormulasRSI_); en la siguiente ejecución ya están calculadas.
+  var hojasRSI = [];
+  var todosTickers = [];
+  for (var h = 0; h < CFG_INTRA.HOJAS_RSI.length; h++) {
+    var nombreHojaRSI = CFG_INTRA.HOJAS_RSI[h];
+    var hojaRSI = ss.getSheetByName(nombreHojaRSI);
+    if (!hojaRSI) { Logger.log('[RSI] No existe la hoja: ' + nombreHojaRSI); continue; }
+    var datosHoja = hojaRSI.getDataRange().getValues();
+    hojasRSI.push({ nombre: nombreHojaRSI, hoja: hojaRSI, datos: datosHoja });
+    for (var t = 2; t < datosHoja.length; t++) {
+      var tk = String(datosHoja[t][CFG_INTRA.S_TICKER] || '').trim();
+      if (tk) todosTickers.push(tk);
+    }
   }
-  _asegurarFormulasRSI_(tickersCartera);
+  if (!hojasRSI.length) return;
+  _asegurarFormulasRSI_(todosTickers);
 
+  // Procesa cada hoja con la misma lógica RSI + SMA200.
+  for (var k = 0; k < hojasRSI.length; k++) {
+    _procesarHojaRSI_(hojasRSI[k].nombre, hojasRSI[k].hoja, hojasRSI[k].datos, props, divisas);
+  }
+}
+
+/**
+ * Procesa UNA hoja de alertas con layout A-Q idéntico al de "Alertas SMA200":
+ * calcula el RSI(14) de cada ticker, lo CRUZA con la tendencia de fondo (precio
+ * vs SMA200) y, si cambia el estado RSI, envía aviso privado (anti-spam por
+ * hoja+ticker, 2 h). Siempre actualiza las columnas N..Q de esa hoja.
+ */
+function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
   for (var i = 2; i < datos.length; i++) {  // fila 1=título(0), fila 2=cabeceras(1), datos desde índice 2
     var f = datos[i];
     var ticker = String(f[CFG_INTRA.S_TICKER] || '').trim();
@@ -317,7 +343,7 @@ function comprobarAlertasRSI() {
     var res = calcularRSI(ticker);
     if (res.rsi === null) {
       // GOOGLEFINANCE falló o datos insuficientes: no tocar la fila (mantiene valores previos)
-      Logger.log('[RSI] ' + ticker + ': ' + res.error);
+      Logger.log('[RSI] ' + nombreHoja + ' / ' + ticker + ': ' + res.error);
       continue;
     }
 
@@ -414,7 +440,7 @@ function comprobarAlertasRSI() {
       }
 
       if (msg) {
-        var clave = 'RSI_ALERT_' + ticker;
+        var clave = 'RSI_ALERT_' + nombreHoja + '_' + ticker;
         var ts = Number(props.getProperty(clave) || 0);
         if (Date.now() - ts >= CFG_INTRA.RSI_COOLDOWN_MS) {
           if (enviarPrivado(msg)) {
@@ -422,7 +448,7 @@ function comprobarAlertasRSI() {
             Utilities.sleep(1000);
           }
         } else {
-          Logger.log('[RSI] ' + ticker + ': en cooldown, no se reenvía (se actualizan columnas).');
+          Logger.log('[RSI] ' + nombreHoja + ' / ' + ticker + ': en cooldown, no se reenvía (se actualizan columnas).');
         }
       }
     }
