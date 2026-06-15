@@ -3,7 +3,7 @@
  * TERMINAL BÚNKER DE INVERSIÓN v2.0
  * ============================================================
  * Solo empresas con potencial positivo (sin margen), ordenadas por
- * rendimiento con margen. 3 filtros: calidad, balance y valoración.
+ * rendimiento con margen. 2 filtros: calidad y balance.
  * Valoración exhaustiva con 7 modelos según el tipo de empresa.
  * ============================================================
  */
@@ -301,10 +301,9 @@ function enviarRecordatorioSemanal() {
   const msg =
     `🤖 *BÚNKER DE INVERSIÓN v2.0 — Cómo funciona*\n\n` +
     `Solo aparecen empresas con *potencial positivo* (sin margen de seguridad), ordenadas por rendimiento con margen.\n\n` +
-    `Pasan 3 filtros:\n` +
-    `✅ Calidad (Moat)\n` +
-    `✅ Balance financiero sólido\n` +
-    `✅ Valoración razonable\n\n` +
+    `Pasan 2 filtros de cribado:\n` +
+    `✅ Calidad (Moat: ROIC, márgenes, crecimiento)\n` +
+    `✅ Balance (Net Debt/EBITDA por modelo)\n\n` +
     `Cada empresa se valora con *uno de 7 modelos* según su tipo: DCF, múltiplos, Graham, activos netos...\n\n` +
     `Solo las que superan todo llegan aquí.\n\n` +
     `🟢 = pasó el filtro como sólida (ANALIZAR)\n` +
