@@ -690,6 +690,59 @@ function instalarTriggerIntradia() {
   Logger.log('[INTRA] Trigger creado: cada 30 min → comprobarAlertasIntradia().');
 }
 
+// ===========================================================================
+// HORARIO OPERATIVO — sin ejecuciones de 00:00 a 08:00
+// Apps Script NO permite limitar un trigger everyMinutes() a una franja: se
+// dispara 24/7 y cada disparo cuenta como ejecución (un return interno NO lo
+// evita). Por eso CREAMOS los triggers de alta frecuencia por la mañana y los
+// BORRAMOS por la noche, con dos triggers diarios de orquestación.
+// ▶ Ejecuta configurarHorarioOperativo() UNA vez para instalar todo.
+// ===========================================================================
+function configurarHorarioOperativo() {
+  // Limpia triggers previos (alta frecuencia + orquestación) para no duplicar.
+  _borrarTriggersPorNombre_([
+    'comprobarAlertasIntradia',
+    'comprobarAlertasIndividuales',
+    'activarTriggersDiurnos',
+    'desactivarTriggersNocturnos'
+  ]);
+
+  // Orquestación diaria (hora Madrid): ON a las 08:00, OFF a las 23:00.
+  // OFF a las 23:00 (no a las 00:00) para que la franja 00:00-08:00 quede con
+  // CERO ejecuciones; a esa hora todos los mercados del bünker ya cerraron.
+  ScriptApp.newTrigger('activarTriggersDiurnos')
+    .timeBased().everyDays(1).atHour(8).inTimezone(CFG_INTRA.ZONA).create();
+  ScriptApp.newTrigger('desactivarTriggersNocturnos')
+    .timeBased().everyDays(1).atHour(23).inTimezone(CFG_INTRA.ZONA).create();
+
+  // Estado inicial según la hora actual (franja activa: 08:00 ≤ h < 23:00).
+  var hora = Number(Utilities.formatDate(new Date(), CFG_INTRA.ZONA, 'HH'));
+  if (hora >= 8 && hora < 23) {
+    activarTriggersDiurnos();
+    Logger.log('[HORARIO] Configurado. Franja diurna: alta frecuencia ACTIVA.');
+  } else {
+    Logger.log('[HORARIO] Configurado. Fuera de franja (23:00-08:00): alta frecuencia APAGADA hasta las 08:00.');
+  }
+}
+
+/** Crea los triggers de alta frecuencia si no existen (franja 08:00-23:00). */
+function activarTriggersDiurnos() {
+  if (!_existeTrigger_('comprobarAlertasIntradia')) {
+    ScriptApp.newTrigger('comprobarAlertasIntradia').timeBased().everyMinutes(30).create();
+    Logger.log('[HORARIO] Creado trigger: comprobarAlertasIntradia (cada 30 min).');
+  }
+  if (!_existeTrigger_('comprobarAlertasIndividuales')) {
+    ScriptApp.newTrigger('comprobarAlertasIndividuales').timeBased().everyMinutes(15).create();
+    Logger.log('[HORARIO] Creado trigger: comprobarAlertasIndividuales (cada 15 min).');
+  }
+}
+
+/** Borra los triggers de alta frecuencia (franja nocturna 23:00-08:00). */
+function desactivarTriggersNocturnos() {
+  _borrarTriggersPorNombre_(['comprobarAlertasIntradia', 'comprobarAlertasIndividuales']);
+  Logger.log('[HORARIO] Eliminados triggers de alta frecuencia (franja nocturna).');
+}
+
 function instalarTriggerSemanalMensual() {
   if (_existeTrigger_('comprobarAlertasSemanalesMensuales')) {
     Logger.log('[INTRA] Trigger semanal/mensual ya existe.');
@@ -814,6 +867,14 @@ function _existeTrigger_(nombreFuncion) {
   var ts = ScriptApp.getProjectTriggers();
   for (var i = 0; i < ts.length; i++) if (ts[i].getHandlerFunction() === nombreFuncion) return true;
   return false;
+}
+
+/** Borra todos los triggers cuya función esté en la lista dada. */
+function _borrarTriggersPorNombre_(nombres) {
+  var ts = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < ts.length; i++) {
+    if (nombres.indexOf(ts[i].getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(ts[i]);
+  }
 }
 
 /** Número tolerante (admite coma decimal y %). null si no válido. */
