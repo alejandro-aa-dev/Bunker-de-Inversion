@@ -18,7 +18,7 @@
  *   - CONFIG.DISCLAIMER / HOJA_USA / HOJA_EXUSA  (ALERTAS DE INVERSIÓN UNIFICADAS.js)
  *   - formatPct(), iconoFiltro()       (ALERTAS DE INVERSIÓN UNIFICADAS.js)
  *
- * NOTA: para BLOQUE 3 hace falta que la hoja "Otras Empresas1" tenga las
+ * NOTA: para BLOQUE 3 hace falta que la hoja "Alertas SMA200" tenga las
  * columnas L (Var% semana) y M (Var% mes). Fórmulas sugeridas:
  *   L2: =IFERROR((C2/GOOGLEFINANCE(B2,"price",TODAY()-7)-1)*100, 0)
  *   M2: =IFERROR((C2/GOOGLEFINANCE(B2,"price",TODAY()-30)-1)*100, 0)
@@ -28,20 +28,20 @@
 // ===== Configuración local (solo lo propio de este módulo) =================
 var CFG_INTRA = {
   ZONA: 'Europe/Madrid',
-  HOJA_SMA: 'Otras Empresas1',
+  HOJA_SMA: 'Alertas SMA200',
 
   // Hojas con layout A-Q (idéntico) que procesa el BLOQUE 4 (RSI + SMA200).
-  // 'Otras Empresas1' y 'Otras Empresas2' = carteras de alertas con el mismo
-  // layout A-Q. Para añadir otra hoja basta con replicar el layout y meter su
-  // nombre aquí.
-  HOJAS_RSI: ['Otras Empresas1', 'Otras Empresas2'],
+  // 'Alertas SMA200' = cartera Rubén y Ale; 'Otras Empresas2' = mini búnker
+  // (empresas que pasaron el filtro de calidad+valoración de "Otras Empresas1").
+  // Para añadir otra hoja basta con replicar el layout y meter su nombre aquí.
+  HOJAS_RSI: ['Alertas SMA200', 'Otras Empresas2'],
 
   // Ventana intradía (minutos desde medianoche, hora Madrid)
   DIA_INI: 1, DIA_FIN: 5,          // 1=lunes ... 5=viernes (ISO)
   HORA_INI_MIN: 9 * 60,            // 9:00
   HORA_FIN_MIN: 21 * 60,           // 21:00
 
-  // --- Columnas hoja "Otras Empresas1" (0-indexed) ---
+  // --- Columnas layout A-Q compartido ("Alertas SMA200" y "Otras Empresas2") ---
   S_ACCION: 0,   // A
   S_TICKER: 1,   // B
   S_PRECIO: 2,   // C
@@ -281,8 +281,9 @@ function comprobarAlertasSemanalesMensuales() {
 // BLOQUE 4 — RSI sobreventa/sobrecompra (una vez al día, ~17:30 L-V)
 // ===========================================================================
 /**
- * Recorre TODAS las hojas de CFG_INTRA.HOJAS_RSI (bünker grande "Otras Empresas1"
- * + "Otras Empresas2", mismo layout A-Q), calcula el RSI(14) de cada ticker y
+ * Recorre TODAS las hojas de CFG_INTRA.HOJAS_RSI ("Alertas SMA200" = cartera
+ * Rubén y Ale + "Otras Empresas2" = mini búnker, mismo layout A-Q), calcula
+ * el RSI(14) de cada ticker y
  * CRUZA el extremo del RSI con la tendencia de fondo (precio vs SMA200):
  *  - Sobreventa  + precio SOBRE SMA200 → 🟢 POSIBLE COMPRA (rebote en tendencia alcista)
  *  - Sobreventa  + precio BAJO  SMA200 → ⚠️ cuchillo cayendo (solo vigilar, no compra limpia)
@@ -302,7 +303,7 @@ function comprobarAlertasRSI() {
   var props = PropertiesService.getScriptProperties();
   var divisas = _mapaDivisas_(ss);
 
-  // Recoge todas las hojas con layout A-Q (bünker grande + "Otras Empresas") y
+  // Recoge todas las hojas con layout A-Q ("Alertas SMA200" + "Otras Empresas2") y
   // junta TODOS sus tickers para asegurar las fórmulas GOOGLEFINANCE de una sola
   // pasada en la hoja scratch. La primera vez pueden no resolverse aún (ver
   // _asegurarFormulasRSI_); en la siguiente ejecución ya están calculadas.
@@ -329,7 +330,7 @@ function comprobarAlertasRSI() {
 }
 
 /**
- * Procesa UNA hoja de alertas con layout A-Q idéntico al de "Otras Empresas1":
+ * Procesa UNA hoja de alertas con layout A-Q idéntico al de "Alertas SMA200":
  * calcula el RSI(14) de cada ticker, lo CRUZA con la tendencia de fondo (precio
  * vs SMA200) y, si cambia el estado RSI, envía aviso privado (anti-spam por
  * hoja+ticker, 2 h). Siempre actualiza las columnas N..Q de esa hoja.

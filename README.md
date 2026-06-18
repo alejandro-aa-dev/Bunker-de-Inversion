@@ -32,9 +32,10 @@ Google Sheets (fuente de datos)
     ├── Hoja "Bunker de inversion exUSA"
     ├── Hoja "Ranking USA"
     ├── Hoja "Ranking exUSA"
-    ├── Hoja "Alertas SMA200"      (cartera Rubén y Ale: precio, SMA200 y RSI)
-    ├── Hoja "Otras Empresas1"     (sistema de valoración personal de Ale: filtro + minibúnker)
-    └── Hoja "Otras Empresas2"     (alertas RSI + SMA200 de "otras empresas", layout A-Q)
+    ├── Hoja "Alertas SMA200"      (cartera Rubén y Ale — alertas privadas: precio, var%, SMA200 y RSI)
+    ├── Hoja "Otras Empresas1"     (mini búnker paso 1-2: filtro de calidad 2 capas + valoración 7 modelos)
+    ├── Hoja "Otras Empresas2"     (mini búnker paso 3: empresas filtradas — alertas privadas RSI + SMA200)
+    └── Hoja "_scratchRSI"         (oculta — fórmulas GOOGLEFINANCE persistentes para el cálculo de RSI)
 
 Google Apps Script (lógica y automatización)
     ├── ALERTAS DE INVERSIÓN UNIFICADAS.js   ← motor principal (canal público)
@@ -56,6 +57,21 @@ Además del canal público, hay un bloque de alertas **privadas** que se envían
 a los chats de Ale y Rubén (`enviarPrivado()`), nunca al canal. Viven en
 `alertasIntradiaPrivadas.js` y `alertasPromediarSMA200.js`.
 
+Hay dos flujos independientes de alertas privadas:
+
+**1. Cartera Rubén y Ale** — hoja `"Alertas SMA200"`:
+- Precio ± intradía (BLOQUE 1, cada 30 min) y variaciones semanal/mensual (BLOQUE 3, diario).
+- Señal RSI + SMA200 (BLOQUE 4, diario ~17:30) sobre las posiciones ya abiertas.
+- Señal de promediar a la baja (`comprobarAlertasPromediar`, diario 18:00): avisa cuando
+  precio ≤ SMA200 y el semáforo de valoración está en zona de compra.
+
+**2. Mini búnker** — flujo de 3 pasos entre dos hojas:
+- `"Otras Empresas1"` (análisis): filtro de calidad 2 capas (calidad + balance) → si el
+  veredicto es ANALIZAR o VIGILAR, pasa a la tabla de valoración por tipo de empresa
+  (7 modelos). Las que **no** quedan en ESPERAR / CARO se pasan manualmente a la hoja siguiente.
+- `"Otras Empresas2"` (alertas): empresas que superaron el filtro. El BLOQUE 4 (RSI + SMA200)
+  las monitoriza igual que a la cartera propia, alertando de posibles entradas y salidas.
+
 ### Señal RSI + SMA200 (multi-hoja)
 
 `comprobarAlertasRSI()` (trigger diario ~17:30, L-V) calcula el **RSI(14)** con
@@ -71,11 +87,11 @@ de fondo** (precio vs su SMA200). El cruce define la señal:
 | Vuelta a 30–70 | — | ℹ️ aviso informativo de cambio de estado |
 
 La función procesa **todas las hojas listadas en `CFG_INTRA.HOJAS_RSI`** (por
-defecto `"Otras Empresas1"` y `"Otras Empresas2"`), siempre que
+defecto `"Alertas SMA200"` y `"Otras Empresas2"`), siempre que
 compartan el mismo layout A-Q. Escribe en cada hoja las columnas **N** (RSI),
 **O** (estado), **P** (fecha) y **Q** (última señal). Anti-spam: máx. 1 alerta por
 hoja+ticker cada 2 h. Para añadir otra cartera basta con replicar el layout A-Q de
-"Otras Empresas1" en una hoja nueva y añadir su nombre a `CFG_INTRA.HOJAS_RSI`.
+"Alertas SMA200" en una hoja nueva y añadir su nombre a `CFG_INTRA.HOJAS_RSI`.
 
 ## Requisitos
 
