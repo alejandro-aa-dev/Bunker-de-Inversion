@@ -71,11 +71,11 @@ de fondo** (precio vs su SMA200). El cruce define la señal:
 | Vuelta a 30–70 | — | ℹ️ aviso informativo de cambio de estado |
 
 La función procesa **todas las hojas listadas en `CFG_INTRA.HOJAS_RSI`** (por
-defecto `"Alertas SMA200"` del bünker grande y `"Otras Empresas2"`), siempre que
+defecto `"Otras Empresas1"` y `"Otras Empresas2"`), siempre que
 compartan el mismo layout A-Q. Escribe en cada hoja las columnas **N** (RSI),
 **O** (estado), **P** (fecha) y **Q** (última señal). Anti-spam: máx. 1 alerta por
 hoja+ticker cada 2 h. Para añadir otra cartera basta con replicar el layout A-Q de
-"Alertas SMA200" en una hoja nueva y añadir su nombre a `CFG_INTRA.HOJAS_RSI`.
+"Otras Empresas1" en una hoja nueva y añadir su nombre a `CFG_INTRA.HOJAS_RSI`.
 
 ## Requisitos
 

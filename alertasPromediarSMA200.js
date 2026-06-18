@@ -2,7 +2,7 @@
  * ============================================================
  * ALERTAS DE PROMEDIAR A LA BAJA (SMA200) — Cartera Rubén y Ale
  * ============================================================
- * Avisa SOLO de posiciones que ya tienes (pestaña "Alertas SMA200")
+ * Avisa SOLO de posiciones que ya tienes (pestaña "Otras Empresas1")
  * cuando coinciden: precio <= SMA200 (técnico)  Y  semáforo en
  * ganga/buena compra (valoración + calidad, ya embebidas en el
  * semáforo). La señal viene calculada por fórmula en la hoja
@@ -15,7 +15,7 @@
  */
 
 const CFG_SMA = {
-  HOJA: "Alertas SMA200",
+  HOJA: "Otras Empresas1",
   FILA_INICIO: 3,                    // fila 1 = título, fila 2 = cabeceras
   N_COLS: 10,                        // A..J
   // Anti-spam por CAMBIO DE TRAMO (no por reloj): no repite el mismo tramo,
@@ -32,7 +32,7 @@ const CFG_SMA = {
 };
 
 /**
- * Recorre la pestaña "Alertas SMA200" y avisa de oportunidades de
+ * Recorre la pestaña "Otras Empresas1" y avisa de oportunidades de
  * promediar. Pensado para un disparador DIARIO (no intradía).
  */
 function comprobarAlertasPromediar() {
