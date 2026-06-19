@@ -586,8 +586,10 @@ function _asegurarFormulasRSI_(tickers) {
     // (Re)escribir si falta la fórmula, quedó en #ERROR (p.ej. por separador de
     // argumentos equivocado para el idioma de la hoja) o pide un histórico
     // distinto al configurado en RSI_DIAS_HISTORICO
+    var displayVal = String(celdaFormula.getDisplayValue());
     if (!fActual ||
-        String(celdaFormula.getDisplayValue()).indexOf('#ERROR') === 0 ||
+        displayVal.indexOf('#ERROR') === 0 ||
+        displayVal.indexOf('#N/A') === 0 ||
         fActual.indexOf('TODAY()-' + CFG_INTRA.RSI_DIAS_HISTORICO) < 0) {
       _escribirFormulaGF_(celdaFormula, tickers[i]);
       nuevos = true;
