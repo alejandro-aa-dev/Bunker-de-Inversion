@@ -96,6 +96,8 @@ function comprobarAlertasIntradia() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var props = PropertiesService.getScriptProperties();
   var divisas = _mapaDivisas_(ss);
+  var carteraTickers = _tickersCartera_(ss);
+  var preciosBunker = _mapaPrecios_(ss);
 
   // ---------- BLOQUE 1: precio % del día ----------
   var hojaSMA = ss.getSheetByName(CFG_INTRA.HOJA_SMA);
@@ -108,6 +110,8 @@ function comprobarAlertasIntradia() {
 
       var accion = String(f[CFG_INTRA.S_ACCION] || '').trim();
       var precio = _intraNum_(f[CFG_INTRA.S_PRECIO]);
+      // Fallback: si la fórmula de col C no devuelve precio, buscarlo en los Bunker sheets
+      if (!precio) precio = preciosBunker[ticker.toUpperCase()] || null;
       var varDia = _intraNum_(f[CFG_INTRA.S_VARDIA]);
       if (varDia === null) continue;
       var div = divisas[ticker] || '';
@@ -141,11 +145,11 @@ function comprobarAlertasIntradia() {
   }
 
   // ---------- BLOQUE 2: valoración (hojas Bunker) ----------
-  _intraBloqueValoracion_(ss, props, CONFIG.HOJA_USA, '$');
-  _intraBloqueValoracion_(ss, props, CONFIG.HOJA_EXUSA, '€');
+  _intraBloqueValoracion_(ss, props, CONFIG.HOJA_USA, '$', carteraTickers);
+  _intraBloqueValoracion_(ss, props, CONFIG.HOJA_EXUSA, '€', carteraTickers);
 }
 
-function _intraBloqueValoracion_(ss, props, nombreHoja, divisa) {
+function _intraBloqueValoracion_(ss, props, nombreHoja, divisa, carteraTickers) {
   var hoja = ss.getSheetByName(nombreHoja);
   if (!hoja) return;
   var vals = hoja.getDataRange().getValues();
@@ -179,14 +183,16 @@ function _intraBloqueValoracion_(ss, props, nombreHoja, divisa) {
       var puesto = f[CFG_INTRA.B_PUESTO];
       var icono = iconoFiltro(decision);
 
+      var esCartera = !!(carteraTickers && carteraTickers[ticker.toUpperCase()]);
       enviarPrivado(
         '🎯 *' + estado.label + '* — ' + nombre + ' (' + ticker + ')' + icono + '\n\n' +
         '🏆 Puesto: #' + puesto + '\n' +
         '💰 Precio actual: ' + _fmt_(precio) + divisa + ' | Precio ganga: ' + _fmt_(ganga) + divisa + '\n' +
         '🛡️ Desc. con margen: *' + formatPct(f[CFG_INTRA.B_DESC_CON]) + '*\n' +
         '📈 Desc. sin margen: ' + formatPct(f[CFG_INTRA.B_DESC_SIN]) + '\n\n' +
-        'Según el sistema de valoración de Ale, está en zona de compra 👇\n' +
-        '🛒 _Revisa el broker y analiza si refuerzas posición._\n\n' +
+        (esCartera
+          ? 'Según el sistema de valoración de Ale, está en zona de compra 👇\n🛒 _Revisa el broker y analiza si refuerzas posición._'
+          : 'Esta candidata del Búnker acaba de entrar en zona de compra 👇\n🔎 _No la tenemos en cartera: ¿es momento de iniciar posición? Analízala antes de decidir._') + '\n\n' +
         CONFIG.DISCLAIMER);
 
       props.setProperty(claveEstado, estado.key);
@@ -325,7 +331,8 @@ function comprobarAlertasRSI() {
 
   // Procesa cada hoja con la misma lógica RSI + SMA200.
   for (var k = 0; k < hojasRSI.length; k++) {
-    _procesarHojaRSI_(hojasRSI[k].nombre, hojasRSI[k].hoja, hojasRSI[k].datos, props, divisas);
+    var esCartera = hojasRSI[k].nombre === CFG_INTRA.HOJA_SMA;
+    _procesarHojaRSI_(hojasRSI[k].nombre, hojasRSI[k].hoja, hojasRSI[k].datos, props, divisas, esCartera);
   }
 }
 
@@ -335,7 +342,7 @@ function comprobarAlertasRSI() {
  * vs SMA200) y, si cambia el estado RSI, envía aviso privado (anti-spam por
  * hoja+ticker, 2 h). Siempre actualiza las columnas N..Q de esa hoja.
  */
-function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
+function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas, esCartera) {
   for (var i = 2; i < datos.length; i++) {  // fila 1=título(0), fila 2=cabeceras(1), datos desde índice 2
     var f = datos[i];
     var ticker = String(f[CFG_INTRA.S_TICKER] || '').trim();
@@ -384,7 +391,9 @@ function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
                 cabecera +
                 '⬇️ RSI: *' + _fmt_(res.rsi) + '* (<' + CFG_INTRA.RSI_SOBREVENTA + ' → agotamiento vendedor)\n' +
                 lineaTendencia + lineaPrecio +
-                '🧭 _Sobreventa con el precio sobre su SMA200: buena relación riesgo/recompensa. Análisis propio y lo hablamos antes de entrar._\n\n' +
+                (esCartera
+                  ? '🧭 _Sobreventa con el precio sobre su SMA200: buena relación riesgo/recompensa. Análisis propio y lo hablamos antes de entrar._'
+                  : '🧭 _Candidata del Búnker en sobreventa con tendencia alcista: la mejor combinación para plantearse entrar. No la tenemos aún — analiza bien antes de decidir._') + '\n\n' +
                 CONFIG.DISCLAIMER;
         } else if (tendencia === 'BAJISTA') {
           senal = 'VIGILAR (CUCHILLO)';
@@ -392,7 +401,9 @@ function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
                 cabecera +
                 '⬇️ RSI: *' + _fmt_(res.rsi) + '* (<' + CFG_INTRA.RSI_SOBREVENTA + ')\n' +
                 lineaTendencia + lineaPrecio +
-                '🧭 _RSI en sobreventa PERO precio bajo su SMA200: posible cuchillo cayendo. NO es compra limpia, solo vigilar._\n\n' +
+                (esCartera
+                  ? '🧭 _RSI en sobreventa PERO precio bajo su SMA200: posible cuchillo cayendo. NO es compra limpia, solo vigilar._'
+                  : '🧭 _Candidata del Búnker en sobreventa pero yendo a la baja. Posible cuchillo — sin señal limpia para entrar. Solo vigilar de momento._') + '\n\n' +
                 CONFIG.DISCLAIMER;
         } else {
           senal = 'ENTRADA';
@@ -409,7 +420,9 @@ function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
                 cabecera +
                 '⬆️ RSI: *' + _fmt_(res.rsi) + '* (>' + CFG_INTRA.RSI_SOBRECOMPRA + ' → rebote agotándose)\n' +
                 lineaTendencia + lineaPrecio +
-                '🧭 _Sobrecompra con el precio bajo su SMA200: si la tesis ya no convence, buen momento para reducir. Lo hablamos antes._\n\n' +
+                (esCartera
+                  ? '🧭 _Sobrecompra con el precio bajo su SMA200: si la tesis ya no convence, buen momento para reducir. Lo hablamos antes._'
+                  : '🧭 _Candidata del Búnker cara y en tendencia bajista. Sin acción: si algún día la quisiéramos incorporar, mejor esperar a que corrija._') + '\n\n' +
                 CONFIG.DISCLAIMER;
         } else if (tendencia === 'ALCISTA') {
           senal = 'FUERZA ALCISTA';
@@ -417,7 +430,9 @@ function _procesarHojaRSI_(nombreHoja, hoja, datos, props, divisas) {
                 cabecera +
                 '⬆️ RSI: *' + _fmt_(res.rsi) + '* (>' + CFG_INTRA.RSI_SOBRECOMPRA + ')\n' +
                 lineaTendencia + lineaPrecio +
-                '🧭 _RSI alto pero precio sobre su SMA200: la empresa va lanzada. Posible corrección a corto; ni comprar ni vender con prisas._\n\n' +
+                (esCartera
+                  ? '🧭 _RSI alto pero precio sobre su SMA200: la empresa va lanzada. Posible corrección a corto; ni comprar ni vender con prisas._'
+                  : '🧭 _Candidata del Búnker disparada al alza. No precipitarse: el tren va lanzado, pero el RSI extendido pide esperar una corrección antes de entrar._') + '\n\n' +
                 CONFIG.DISCLAIMER;
         } else {
           senal = 'SALIDA';
@@ -890,4 +905,41 @@ function _intraNum_(v) {
 function _fmt_(n) {
   if (n === null || n === undefined || isNaN(n)) return '—';
   return String(parseFloat(Number(n).toFixed(2))).replace('.', ',');
+}
+
+/**
+ * Devuelve {TICKER_MAYUS: true} con los tickers de la cartera (hoja "Alertas SMA200").
+ * Usado para distinguir empresas en cartera vs candidatas del Búnker.
+ */
+function _tickersCartera_(ss) {
+  var hoja = ss.getSheetByName(CFG_INTRA.HOJA_SMA);
+  if (!hoja) return {};
+  var datos = hoja.getDataRange().getValues();
+  var set = {};
+  for (var i = 2; i < datos.length; i++) {
+    var tk = String(datos[i][CFG_INTRA.S_TICKER] || '').trim();
+    if (tk) set[tk.toUpperCase()] = true;
+  }
+  return set;
+}
+
+/**
+ * Devuelve {TICKER_MAYUS: precio} a partir de los Bunker sheets.
+ * Fallback para cuando la fórmula de precio en col C de "Alertas SMA200" no resuelve
+ * (p.ej. acciones españolas con formato de ticker no reconocido por GOOGLEFINANCE).
+ */
+function _mapaPrecios_(ss) {
+  var mapa = {};
+  var fuentes = [CONFIG.HOJA_USA, CONFIG.HOJA_EXUSA];
+  for (var s = 0; s < fuentes.length; s++) {
+    var hoja = ss.getSheetByName(fuentes[s]);
+    if (!hoja) continue;
+    var vals = hoja.getDataRange().getValues();
+    for (var r = 1; r < vals.length; r++) {
+      var tk = String(vals[r][CFG_INTRA.B_TICKER] || '').trim();
+      var pr = _intraNum_(vals[r][CFG_INTRA.B_PRECIO]);
+      if (tk && pr) mapa[tk.toUpperCase()] = pr;
+    }
+  }
+  return mapa;
 }

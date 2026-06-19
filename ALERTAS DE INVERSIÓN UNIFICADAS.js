@@ -144,7 +144,7 @@ function obtenerRanking(rankingHoja, bunkerHoja, top) {
     if (ultimaBunker >= 2) {
       const dataBunker = shBunker.getRange(2, 1, ultimaBunker - 1, 16).getValues();
       dataBunker.forEach(row => {
-        const t = String(row[BCOLS.TICKER] || "").trim();
+        const t = String(row[BCOLS.TICKER] || "").trim().toUpperCase();
         if (t) {
           precioMap[t] = {
             precioActual: row[BCOLS.PRECIO_ACTUAL],
@@ -161,17 +161,27 @@ function obtenerRanking(rankingHoja, bunkerHoja, top) {
   return topItems
     .map(r => ({
       ...r,
-      ...(precioMap[r.ticker] || { precioActual: null, precioGanga: null, descSin: null, descCon: null })
+      ...(precioMap[r.ticker.toUpperCase()] || { precioActual: null, precioGanga: null, descSin: null, descCon: null })
     }))
-    .filter(r => r.descCon === null || Number(r.descCon) > 0);
+    .filter(r => {
+      if (r.precioActual === null) {
+        console.log('⚠️ [Ranking] Sin datos de precio para: ' + r.ticker + ' en ' + bunkerHoja);
+        return false;
+      }
+      return r.descCon !== null && Number(r.descCon) > 0;
+    });
 }
 
 function construirLineaRanking(op, divisa) {
   let bloque = `🏆 *#${op.puesto}* | *${op.nombre}* (${op.ticker})${iconoFiltro(op.decision)}\n`;
-  if (op.precioActual !== null) {
-    bloque += `💰 Precio: ${Number(op.precioActual).toFixed(2)}${divisa} | Ganga: ${Number(op.precioGanga).toFixed(2)}${divisa}\n`;
+  const precioNum = Number(op.precioActual);
+  const gangaNum  = Number(op.precioGanga);
+  if (precioNum > 0) {
+    bloque += `💰 Precio: ${precioNum.toFixed(2)}${divisa} | Ganga: ${gangaNum.toFixed(2)}${divisa}\n`;
     bloque += `🛡️ Desc. con margen: *${formatPct(op.descCon)}*\n`;
     bloque += `📈 Desc. sin margen: ${formatPct(op.descSin)}\n`;
+  } else if (gangaNum > 0) {
+    bloque += `🎯 Precio ganga: ${gangaNum.toFixed(2)}${divisa} _(precio actual no disponible)_\n`;
   } else {
     bloque += `${op.decision}\n`;
   }
