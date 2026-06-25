@@ -125,7 +125,6 @@ Utilidades de diagnóstico: `testRSI()`, `verCierresRSI()`.
 - **Proveedor real:** **Groq**, modelo **`llama-3.1-8b-instant`** (`api.groq.com`, clave `GROQ_API_KEY1`).
 - **Caché:** la respuesta se guarda 24 h en Script Properties (`GROQ_CACHE_<ticker>`) para no repetir llamadas.
 - Si la API falla o no hay clave, devuelve un texto de respaldo y la alerta se envía igualmente.
-- `listarModelosDisponibles()` es una utilidad suelta que consulta los modelos de **Gemini** (no se usa en el flujo de alertas).
 
 ---
 
@@ -199,7 +198,6 @@ Google Apps Script (lógica)
     ├── alertasPromediarSMA200.js             ← privadas: promediar a la baja + enviarPrivado()
     ├── enviarTelegram.js                     ← helper de envío genérico
     ├── guardarTokenTelegram.js               ← guardar el token una vez
-    ├── listarModelosDisponibles.js           ← utilidad (modelos Gemini)
     └── testTelegram.js                       ← diagnóstico (diagnosticoTelegram)
 
 APIs externas
@@ -234,7 +232,6 @@ Los destinatarios privados se configuran en `CFG_SMA.DESTINATARIOS_PRIVADOS` (us
 |-----------|-------|
 | `TELEGRAM_TOKEN` | Token del bot (BotFather) |
 | `GROQ_API_KEY1` | API key de Groq (análisis IA) |
-| `GEMINI_API_KEY1` | (opcional) solo para `listarModelosDisponibles()` |
 
 ### 9.4. Activar la automatización
 1. Ejecuta **una vez** `configurarHorarioOperativo()` (crea la franja 08:00–23:00).
