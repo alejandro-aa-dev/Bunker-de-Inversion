@@ -79,12 +79,24 @@ var CFG_INTRA = {
   RSI_PERIODO: 14,                         // RSI estándar de 14 sesiones
   RSI_SOBREVENTA: 30,                      // RSI < 30 → sobreventa
   RSI_SOBRECOMPRA: 70,                     // RSI > 70 → sobrecompra
-  RSI_DIAS_HISTORICO: 150,                 // días naturales pedidos (~100 sesiones, para que el suavizado de Wilder converja como en TradingView)
+  RSI_DIAS_HISTORICO: 365,                 // días naturales pedidos (~252 sesiones): cubre el mínimo de 1 año del BLOQUE 5 y deja converger el RSI de Wilder
   RSI_COOLDOWN_MS: 2 * 60 * 60 * 1000,     // 2 horas entre alertas del mismo ticker
   // Hoja oculta con una fórmula GOOGLEFINANCE PERSISTENTE por ticker (bloques de
   // 3 columnas). No borrar: las fórmulas escritas por script no se resuelven
   // dentro de la misma ejecución, así que se dejan vivas y se leen ya calculadas.
-  RSI_HOJA_SCRATCH: '_scratchRSI'
+  RSI_HOJA_SCRATCH: '_scratchRSI',
+
+  // --- BLOQUE 5: nuevos mínimos (solo cartera "Alertas SMA200") ---
+  // Ventanas en SESIONES bursátiles (no días naturales). Ordenadas de mayor a
+  // menor: se avisa de la MÁS PROFUNDA que el precio rompe (1 año > 6m > 3m > 1m).
+  // Reutiliza los cierres históricos que ya descarga la hoja _scratchRSI.
+  MIN_VENTANAS: [
+    { label: '1 AÑO',    sesiones: 252 },
+    { label: '6 MESES',  sesiones: 126 },
+    { label: '3 MESES',  sesiones: 63 },
+    { label: '1 MES',    sesiones: 21 }
+  ]
+  // Anti-spam: máx. 1 aviso por ticker y día natural (Script Properties MINIMO_DIA_*).
 };
 
 // ===========================================================================
@@ -147,6 +159,97 @@ function comprobarAlertasIntradia() {
   // ---------- BLOQUE 2: valoración (hojas Bunker) ----------
   _intraBloqueValoracion_(ss, props, CONFIG.HOJA_USA, '$', carteraTickers);
   _intraBloqueValoracion_(ss, props, CONFIG.HOJA_EXUSA, '€', carteraTickers);
+
+  // ---------- BLOQUE 5: nuevos mínimos (solo cartera) ----------
+  _intraBloqueMinimos_(ss, props, divisas, preciosBunker);
+}
+
+// ===========================================================================
+// BLOQUE 5 — Nuevos mínimos de 1 mes / 3 / 6 meses / 1 año (solo cartera)
+// ===========================================================================
+/**
+ * Recorre la hoja "Alertas SMA200" (cartera Ale y Rubén) y, usando los cierres
+ * históricos que ya descarga la hoja oculta _scratchRSI (~252 sesiones), avisa
+ * cuando el precio EN VIVO marca un nuevo mínimo. De las ventanas que rompe se
+ * informa de la MÁS PROFUNDA (1 año > 6m > 3m > 1m).
+ * Anti-spam: máx. 1 aviso por ticker y día natural (Madrid). No busca el suelo
+ * exacto, solo avisar de que "coquetea" con mínimos.
+ */
+function _intraBloqueMinimos_(ss, props, divisas, preciosBunker) {
+  var hoja = ss.getSheetByName(CFG_INTRA.HOJA_SMA);
+  if (!hoja) return;
+  var datos = hoja.getDataRange().getValues();
+
+  // Asegura de una pasada las fórmulas GOOGLEFINANCE de todos los tickers.
+  var tickers = [];
+  for (var t = 2; t < datos.length; t++) {
+    var tk = String(datos[t][CFG_INTRA.S_TICKER] || '').trim();
+    if (tk) tickers.push(tk);
+  }
+  if (!tickers.length) return;
+  var sh = _asegurarFormulasRSI_(tickers);
+
+  var hoy = Utilities.formatDate(new Date(), CFG_INTRA.ZONA, 'yyyyMMdd');
+
+  for (var i = 2; i < datos.length; i++) {  // fila 1=título(0), fila 2=cabeceras(1)
+    var f = datos[i];
+    var ticker = String(f[CFG_INTRA.S_TICKER] || '').trim();
+    if (!ticker) continue;
+
+    var precio = _intraNum_(f[CFG_INTRA.S_PRECIO]);
+    if (!precio) precio = preciosBunker[ticker.toUpperCase()] || null;
+    if (!precio) continue;
+
+    // Cooldown: máx. 1 aviso por ticker y día natural.
+    var claveDia = 'MINIMO_DIA_' + ticker;
+    if (props.getProperty(claveDia) === hoy) continue;
+
+    var cierres = _leerCierresRSI_(sh, ticker);
+    if (cierres.length < CFG_INTRA.MIN_VENTANAS[CFG_INTRA.MIN_VENTANAS.length - 1].sesiones) {
+      // Ni siquiera hay datos para la ventana más corta (1 mes): no se puede juzgar.
+      continue;
+    }
+
+    // Busca la ventana MÁS PROFUNDA cuyo mínimo histórico rompe el precio actual.
+    var rota = null;
+    for (var v = 0; v < CFG_INTRA.MIN_VENTANAS.length; v++) {
+      var ventana = CFG_INTRA.MIN_VENTANAS[v];
+      if (cierres.length < ventana.sesiones) continue;   // sin histórico suficiente para esta ventana
+      var minVent = _minimoVentana_(cierres, ventana.sesiones);
+      if (minVent !== null && precio < minVent) {
+        rota = { label: ventana.label, minimo: minVent };
+        break;   // primera (mayor) ventana rota = la más significativa
+      }
+    }
+    if (!rota) continue;
+
+    var accion = String(f[CFG_INTRA.S_ACCION] || '').trim();
+    var div = divisas[ticker] || '';
+    var dist = (precio / rota.minimo - 1) * 100;   // % bajo el mínimo previo (negativo)
+
+    var ok = enviarPrivado(
+      '🔻 *NUEVO MÍNIMO DE ' + rota.label + '* — ' + accion + ' (' + ticker + ')\n' +
+      '💰 Precio actual: ' + _fmt_(precio) + div + '\n' +
+      '📉 Mínimo previo de ' + rota.label.toLowerCase() + ': ' + _fmt_(rota.minimo) + div +
+        ' (' + (dist >= 0 ? '+' : '') + _fmt_(dist) + '%)\n' +
+      '🛒 _Empresa de tu cartera coqueteando con mínimos. Si la tesis sigue intacta, posible momento de promediar. Revisa el broker._\n\n' +
+      CONFIG.DISCLAIMER);
+
+    if (ok) {
+      props.setProperty(claveDia, hoy);
+      Utilities.sleep(1000);
+    }
+  }
+}
+
+/** Mínimo de las últimas `sesiones` cotizaciones de cierre (las más recientes). */
+function _minimoVentana_(cierres, sesiones) {
+  var ini = Math.max(0, cierres.length - sesiones);
+  var min = null;
+  for (var i = ini; i < cierres.length; i++) {
+    if (min === null || cierres[i] < min) min = cierres[i];
+  }
+  return min;
 }
 
 function _intraBloqueValoracion_(ss, props, nombreHoja, divisa, carteraTickers) {
@@ -871,7 +974,7 @@ function _mapaDivisas_(ss) {
  */
 function verEstadoAntiSpam() {
   var props = PropertiesService.getScriptProperties().getProperties();
-  var prefijos = ['INTRA_', 'SEMANAL_', 'MENSUAL_', 'RSI_'];
+  var prefijos = ['INTRA_', 'SEMANAL_', 'MENSUAL_', 'RSI_', 'MINIMO_'];
   var claves = Object.keys(props).filter(function(k) {
     return prefijos.some(function(p) { return k.indexOf(p) === 0; });
   }).sort();
