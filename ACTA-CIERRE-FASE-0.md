@@ -37,11 +37,19 @@ Comprender completamente el sistema actual (código + Google Sheets + flujo oper
 | CC-001 | Corrección candidata | Backlog — Pendiente Fase 2 | `RCOLS` desalineado con el Ranking real (DECISIÓN en índice 5, no 4) → icono 🟢/❗ inerte en el radar |
 | CC-002 | Corrección candidata | Backlog — Pendiente Fase 2 | README/memoria: el paso Otras Empresas1→2 es automático por fórmula, no manual |
 | CC-003 | Corrección candidata | Backlog — Pendiente Fase 2 | LÉEME del Sheet desactualizado (celdas de control AT3:AV5, GEMINI_API_KEY, horarios de triggers) |
-| PA-001 | Pregunta abierta | Pendiente de respuesta (Ale) | ¿Qué es la tarea dominical (10:00) que refresca el Filtro de Calidad desde stockanalysis? |
-| PA-002 | Pregunta abierta | Pendiente de respuesta (Ale) | ¿Sigue vivo el Excel local maestro? ¿Dónde está `BUNKER_SISTEMA_VALORACION_COMPLETO.md`? |
-| PA-003 | Pregunta abierta | Pendiente de respuesta (Ale) | Destino de las hojas legacy ocultas (`Seguimiento en €`, `EEUU`, 2 copias) |
+| PA-001 | Pregunta abierta | **Respondida** 2026-07-03 (ver abajo) | ¿Qué es la tarea dominical (10:00) que refresca el Filtro de Calidad desde stockanalysis? |
+| PA-002 | Pregunta abierta | **Respondida** 2026-07-03 (ver abajo) | ¿Sigue vivo el Excel local maestro? ¿Dónde está `BUNKER_SISTEMA_VALORACION_COMPLETO.md`? |
+| PA-003 | Pregunta abierta | **Respondida** 2026-07-03 (ver abajo) | Destino de las hojas legacy ocultas (`Seguimiento en €`, `EEUU`, 2 copias) |
 
 Las 4 preguntas de diseño detectadas durante la auditoría quedaron registradas en Open Decisions (memoria del proyecto).
+
+### Respuestas de Ale a las preguntas abiertas (2026-07-03)
+
+**PA-001** — Se desconoce el propósito funcional exacto de esta tarea. Durante la migración debe tratarse como un **proceso heredado**. No se modificará hasta comprender completamente su utilidad. Si aporta valor se integrará en el nuevo modelo; si no, se planificará su retirada en una fase posterior.
+
+**PA-002** — El Excel maestro y el documento `BUNKER_SISTEMA_VALORACION_COMPLETO.md` no están localizados actualmente. Se consideran **activos pendientes de localizar**. Su ausencia no bloquea Búnker 3.0, pero si aparecen deberán revisarse antes de eliminar cualquier lógica relacionada con la valoración.
+
+**PA-003** — Los componentes heredados permanecerán **sin modificaciones** durante la migración. Solo cuando el nuevo sistema reproduzca completamente su funcionalidad se decidirá si se archivan, exportan o eliminan. Hasta ese momento forman parte del **patrimonio histórico** del proyecto y no deben eliminarse.
 
 ## Declaraciones
 
