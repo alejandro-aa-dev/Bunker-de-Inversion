@@ -1,5 +1,12 @@
 # ENTORNOS — Producción y DEV
 
+> ## Descubrir ≠ arreglar
+>
+> Lema permanente del proyecto (nacido en la Fase 0): cada fase hace SU trabajo.
+> Auditar no es refactorizar. Diseñar no es programar. Migrar no es "ya que estamos…".
+> Cualquier mejora detectada fuera de su fase se **registra** (incidencia, backlog,
+> Open Decisions) y se ejecuta cuando le toque — nunca de pasada.
+
 > **⚠️ DECLARACIÓN DE CONGELACIÓN (2026-07-02)**
 >
 > **A partir de este momento, cualquier desarrollo se realiza exclusivamente sobre el entorno DEV. Producción solo recibirá cambios mediante migraciones validadas.**
