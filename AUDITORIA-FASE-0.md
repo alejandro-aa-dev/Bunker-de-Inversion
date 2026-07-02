@@ -355,7 +355,9 @@ GOOGLEFINANCE ──> Google Sheet (fórmulas: precios, SMA200, var%, valoració
 
 ---
 
-## 13. Pendiente de auditar (Parte B — requiere acceso al Google Sheet)
+## 13. Pendiente de auditar (Parte B) — ✅ COMPLETADA en `AUDITORIA-FASE-0-PARTE-B.md`
+
+Los 8 puntos siguientes quedaron resueltos el 2026-07-02 auditando el duplicado DEV del Sheet:
 
 1. **Fórmulas de las hojas Bunker**: cómo se calculan Decisión (E), Precio ganga (L), descuentos (N/O) — los 7 modelos de valoración y el margen por sector.
 2. **Hojas Ranking**: fórmula de ordenación y del puesto.
