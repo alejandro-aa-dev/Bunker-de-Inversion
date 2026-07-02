@@ -99,6 +99,12 @@ function comprobarAlertasPromediar() {
  * Devuelve true si al menos uno se envió con éxito.
  */
 function enviarPrivado(mensaje) {
+  // Guard de entorno: en DEV (MODO_DEV en 00_DEV.js) no se envía nada, solo se loguea.
+  // En producción MODO_DEV no existe y este if es inocuo.
+  if (typeof MODO_DEV !== "undefined" && MODO_DEV) {
+    console.log("[DEV] Envío PRIVADO bloqueado por MODO_DEV. Mensaje que se habría enviado:\n" + mensaje);
+    return false;
+  }
   const token = PropertiesService.getScriptProperties().getProperty("TELEGRAM_TOKEN");
   if (!token) { console.log("❌ TELEGRAM_TOKEN no configurado"); return false; }
   const dest = CFG_SMA.DESTINATARIOS_PRIVADOS || [];
