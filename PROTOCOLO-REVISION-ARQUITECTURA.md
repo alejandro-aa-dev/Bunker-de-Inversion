@@ -98,9 +98,19 @@ una v2 si la evidencia de las reviews reales muestra los defectos que
 previenen — el mismo estándar de evidencia que el protocolo exige.)*
 
 **Candidatas aceptadas como valiosas:**
-1. **Autorefutación** (la de más valor): "antes de emitir un hallazgo, intenta
-   demostrar que es falso; si no consigues refutar tu propia crítica,
-   mantenla". Control de falsos positivos.
+1. **Autorefutación + autoverificación** (la de más valor; el asesor la
+   re-propuso en la 5ª ronda con mejor redacción): "antes de mantener un
+   hallazgo, intenta refutarlo con el propio contenido de los documentos; si
+   encuentras evidencia en contra, descártalo o reduce su gravedad". Y bloque
+   final de AUTOVERIFICACIÓN: revisar los BLOQUEANTES intentando bajarlos a
+   MEJORA, revisar los conceptos marcados intentando demostrar que están bien,
+   e indicar explícitamente si cambia la valoración. Control de falsos
+   positivos.
+1b. **Doble interpretación** (nueva, 5ª ronda): "si detectas dos
+   interpretaciones razonables de un mismo fragmento, no elijas una
+   arbitrariamente: expón ambas y di cuál es más consistente con el resto del
+   modelo y por qué". Evita convertir ambigüedad documental en 'error del
+   modelo'.
 2. **Invariantes**: identificar las reglas que nunca deberían romperse aunque
    cambie la implementación, y señalar las no documentadas explícitamente.
 3. **Lenguaje ubicuo (DDD)**: ¿un experto del dominio usaría espontáneamente
@@ -111,8 +121,9 @@ previenen — el mismo estándar de evidencia que el protocolo exige.)*
    sustitución): si eliminas un concepto, ¿cuáles dejan de tener sentido?
 
 **Rechazadas con motivo:**
-- *Evidencia positiva obligatoria* — contradice "si algo está bien, dilo una
-  sola vez" y duplica la longitud de la respuesta.
+- *Evidencia positiva obligatoria* (re-propuesta en la 5ª ronda; se mantiene
+  el rechazo) — contradice "si algo está bien, dilo una sola vez" y duplica la
+  longitud de la respuesta que Ale debe adjudicar.
 - *Clasificación extra de priorización* — redundante: la dimensión Clase ya es
   la prioridad (🔴 antes de cerrar · 🟡 planificación · ⚪ futuro).
 - *Revisión de cohesión* — ya existe (tarea estructural, pregunta 2).
