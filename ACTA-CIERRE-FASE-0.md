@@ -4,8 +4,7 @@
 FASE 0 — AUDITORÍA Y MAPA DEL CONOCIMIENTO
 
 Estado:
-  AUDITORÍA FINALIZADA
-  Pendiente de validación para el cierre oficial de la Fase 0.
+  CERRADA — Validada por Ale el 2026-07-16.
 
 Fecha de los trabajos:  2026-07-02 / 2026-07-03
 
@@ -66,16 +65,19 @@ La Fase 1 (Filosofía) ya fue completada y documentada antes de la auditoría (v
 ```
 La Fase 2 solo podrá comenzar tras:
 
-☐ Validación del acta.
-☐ Revisión de los entregables (Partes A y B).
-☐ Registro de las decisiones abiertas (Open Decisions + incidencias de este acta).
-☐ Cierre del Milestone 2 en GitHub.
+☑ Validación del acta.
+☑ Revisión de los entregables (Partes A y B).
+☑ Registro de las decisiones abiertas (Open Decisions + incidencias de este acta).
+☑ Cierre del Milestone 2 en GitHub.
 ```
 
 ## Validación
 
 ```
-Responsable:
-Fecha:
-Observaciones:
+Responsable:    Ale
+Fecha:          2026-07-16
+Observaciones:  Todo leído y OK. Validación dada en sesión de trabajo
+                (proyecto unipersonal: la confirmación verbal de Ale
+                equivale a la firma). Queda autorizado el inicio de la
+                Fase 2 — Modelo de Dominio.
 ```
