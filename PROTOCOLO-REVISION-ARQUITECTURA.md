@@ -90,7 +90,37 @@ Toda revisión de arquitectura se hace en **dos pasadas**:
 - **Conclusión obligatoria**: "¿Cerrarías esta fase si fueras el arquitecto
   responsable? Sí/No. Explica por qué en menos de diez líneas."
 
-## 5. Registro del resultado
+## 5. Backlog para una eventual v2
+
+*(Cuarta ronda de feedback del asesor, 2026-07-16. Decisión de Ale: mantener
+la v1 congelada y ejecutar la review; estas candidatas solo se incorporarán a
+una v2 si la evidencia de las reviews reales muestra los defectos que
+previenen — el mismo estándar de evidencia que el protocolo exige.)*
+
+**Candidatas aceptadas como valiosas:**
+1. **Autorefutación** (la de más valor): "antes de emitir un hallazgo, intenta
+   demostrar que es falso; si no consigues refutar tu propia crítica,
+   mantenla". Control de falsos positivos.
+2. **Invariantes**: identificar las reglas que nunca deberían romperse aunque
+   cambie la implementación, y señalar las no documentadas explícitamente.
+3. **Lenguaje ubicuo (DDD)**: ¿un experto del dominio usaría espontáneamente
+   estos nombres, o suenan a implementación?
+4. **Valoración global numérica** (madurez/robustez/extensibilidad/claridad
+   X/10 + riesgos principales), para comparar revisiones entre sí.
+5. **Prueba de independencia** (menor prioridad; solapa con la de
+   sustitución): si eliminas un concepto, ¿cuáles dejan de tener sentido?
+
+**Rechazadas con motivo:**
+- *Evidencia positiva obligatoria* — contradice "si algo está bien, dilo una
+  sola vez" y duplica la longitud de la respuesta.
+- *Clasificación extra de priorización* — redundante: la dimensión Clase ya es
+  la prioridad (🔴 antes de cerrar · 🟡 planificación · ⚪ futuro).
+- *Revisión de cohesión* — ya existe (tarea estructural, pregunta 2).
+- *Conceptos demasiado generales* — cubierto por deuda conceptual + nombres.
+- *Separación arquitectura/negocio reforzada* — cubierto por "error ≠
+  preferencia" + bloque de metodología separado.
+
+## 6. Registro del resultado
 
 Cada revisión instancia este protocolo en un archivo propio
 (`REVIEW-<hito>.md`) con: el prompt exacto usado, los documentos adjuntados y
