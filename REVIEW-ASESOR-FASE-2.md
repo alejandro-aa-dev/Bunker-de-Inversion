@@ -1,11 +1,11 @@
 # REVIEW DEL ASESOR — Fase 2: Modelo de Dominio
 
 *(Paquete preparado el 2026-07-16 para la revisión crítica del asesor (ChatGPT),
-según METODOLOGIA.md §6. Es el primer pendiente para cerrar la Fase 2.
-**v2**: prompt reescrito tras el feedback metodológico de Ale — sin ejemplos que
-condicionen, con tarea de "romper el modelo", contradicciones, deuda conceptual,
-extensibilidad, nombres vs. responsabilidad, doble dimensión clase×impacto, y
-las preguntas de metodología de inversión separadas como secundarias.)*
+según METODOLOGIA.md §6. Primera instancia del
+`PROTOCOLO-REVISION-ARQUITECTURA.md`. **v3**: añade reglas de rigor —fundamentar
+cada crítica, error ≠ preferencia—, cohesión por concepto, prueba de
+sustitución, formulación neutral de extensibilidad y veredicto final
+obligatorio.)*
 
 ## Cómo usar este paquete
 
@@ -45,6 +45,16 @@ investigación sobre la fiabilidad de las fuentes de valoración.
 conceptual importante aunque no te lo haya preguntado.** No te limites al
 cuestionario.
 
+### REGLAS DE RIGOR (aplican a toda la revisión)
+
+- **Fundamenta cada crítica** con una cita, relación o regla concreta de los
+  documentos. No aceptes (ni emitas) impresiones generales. Si no puedes
+  fundamentar un hallazgo, clasifícalo explícitamente como **HIPÓTESIS** y
+  explica qué información falta para confirmarlo.
+- **No marques como BLOQUEANTE una diferencia de criterio o de estilo de
+  diseño.** Un hallazgo solo será BLOQUEANTE si produce contradicciones,
+  ambigüedad, pérdida de información o imposibilita la evolución del sistema.
+
 ### TAREA 1 — Revisión estructural
 
 Para cada uno de los 8 conceptos (Empresa, Valoración, Calidad, Señal técnica,
@@ -53,11 +63,13 @@ Decisión y Ranking, Inversor, Cartera, Alerta):
 1. Analiza si las **responsabilidades** de cada concepto están correctamente
    separadas. (Deduce las responsabilidades de los documentos; no te doy
    ejemplos para no condicionarte.)
-2. ¿Falta algún concepto que un sistema así necesite? ¿Sobra alguno?
-3. ¿Alguna relación entre conceptos está mal dirigida o incompleta?
-4. ¿Existe algún concepto cuyo **nombre no represente correctamente su
+2. ¿Cada concepto tiene una **responsabilidad cohesionada** o parece una
+   agrupación artificial de responsabilidades distintas?
+3. ¿Falta algún concepto que un sistema así necesite? ¿Sobra alguno?
+4. ¿Alguna relación entre conceptos está mal dirigida o incompleta?
+5. ¿Existe algún concepto cuyo **nombre no represente correctamente su
    responsabilidad**, hoy o cuando el sistema evolucione?
-5. Busca **contradicciones internas**: reglas o principios del modelo que
+6. Busca **contradicciones internas**: reglas o principios del modelo que
    entren en conflicto entre sí.
 
 ### TAREA 2 — Ataca los principios
@@ -67,15 +79,19 @@ Intenta demostrar que alguno de los **principios fundamentales** del proyecto
 "informa, no decide") es **incorrecto, insuficiente o incompatible** con el
 resto del modelo. Si no lo consigues, di cuál resistió peor el ataque.
 
-### TAREA 3 — Deuda conceptual y extensibilidad
+### TAREA 3 — Deuda conceptual, extensibilidad y sustitución
 
 1. Señala conceptos que hoy parecen suficientes pero que probablemente
    generarán **deuda conceptual** cuando el sistema evolucione (conceptos que
    se quedarán pequeños y habrá que partir o renombrar).
-2. **Prueba de extensibilidad**: si dentro de cinco años el sistema quisiera
-   incorporar IA, opciones, ETFs, macroeconomía, criptomonedas o fondos,
-   ¿qué conceptos del modelo tendrían que cambiar? Un buen dominio casi no
-   cambia; señala los puntos donde este cambiaría más.
+2. **Evalúa la estabilidad del modelo** ante la incorporación de nuevos tipos
+   de activos (opciones, ETFs, criptomonedas, fondos), nuevas fuentes de datos
+   y nuevas capacidades analíticas (IA, macroeconomía): ¿qué conceptos
+   tendrían que cambiar y cuánto?
+3. **Prueba de sustitución**: imagina que dentro de cinco años se sustituyen
+   completamente los indicadores técnicos, las fuentes de datos o el método de
+   valoración. ¿Qué conceptos permanecerían intactos y cuáles deberían
+   rediseñarse? Si cambian demasiados conceptos, explica por qué.
 
 ### TAREA 4 — Intenta romper el modelo
 
@@ -116,14 +132,22 @@ y pueden cambiar sin tocar el modelo. Respóndelas aparte y NO bloquean la fase.
 
 Devuelve los hallazgos **numerados** con dos dimensiones:
 
-- **Clase**: 🔴 BLOQUEANTE (error conceptual, corregir antes de cerrar la fase)
-  · 🟡 MEJORA (recomendación concreta, se decide en planificación) · ⚪ OPINIÓN
+- **Clase**: 🔴 BLOQUEANTE (según la definición de las reglas de rigor) ·
+  🟡 MEJORA (recomendación concreta, se decide en planificación) · ⚪ OPINIÓN
   (matiz discutible, decide Ale).
 - **Impacto**: ALTO · MEDIO · BAJO.
 
-Para cada hallazgo: tarea de origen, concepto afectado, problema, propuesta.
-Sin reescribir el modelo entero: hallazgos puntuales y accionables. Si algo
-está bien, dilo una sola vez y sin extenderte.
+Para cada hallazgo: tarea de origen, concepto afectado, problema, propuesta y
+fundamento (cita/regla). Los no fundamentables, marcados además como
+HIPÓTESIS. Sin reescribir el modelo entero: hallazgos puntuales y accionables.
+Si algo está bien, dilo una sola vez y sin extenderte.
+
+### CONCLUSIÓN OBLIGATORIA
+
+Al finalizar responde obligatoriamente:
+
+- **¿Cerrarías esta fase si fueras el arquitecto responsable? Sí / No.**
+- Explica por qué en menos de diez líneas.
 
 ---
 
@@ -135,3 +159,5 @@ las discrepancias, y la decisión de Ale para cada uno.)*
 | # | Clase | Impacto | Concepto | Hallazgo | Posición Claude | Decisión Ale |
 |---|---|---|---|---|---|---|
 | — | — | — | — | *(pendiente de ejecutar la review)* | — | — |
+
+**Veredicto del asesor**: *(pendiente)*
