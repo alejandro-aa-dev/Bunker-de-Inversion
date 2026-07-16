@@ -28,7 +28,7 @@ No cómo lo muestra.
 | **Señal técnica** | ✅ Validado (2026-07-16) |
 | **Decisión y Ranking** | ✅ Validado (2026-07-16) |
 | **Cartera** | ✅ Validado (2026-07-16) |
-| Alerta | Pendiente (personalizable *por Inversor*) |
+| **Alerta** | ✅ Validado (2026-07-16) — mapa completo |
 
 ---
 
@@ -520,3 +520,144 @@ ingresos anuales, yield on cost, rentabilidad TWR y límites de concentración
   mínimos en cartera; con contexto extra para quien rellenó el nivel opcional.
 - **Los Inversores** vía bot (mesa compartida).
 - **La Decisión** — el veredicto ⚠️ REVISAR existe *porque* existe la posición.
+
+---
+
+## 8. ALERTA ✅
+
+*Validado por Ale el 2026-07-16. Investigación previa: principios anti-fatiga de
+alertas (severidad, deduplicación, contexto accionable).*
+
+### 8.1 ¿Qué significa exactamente?
+
+Una **Alerta** es un aviso que el Búnker envía a un Inversor porque **algo
+relevante ha cambiado**. Es el único momento en que el Búnker toma la iniciativa
+(push); todo lo demás es el Inversor preguntando al bot (pull). Cada alerta gasta
+atención y confianza del receptor — de ahí su ley:
+
+> **Se alerta sobre transiciones, nunca sobre estados.** "Entró HOY en zona ganga"
+> es una alerta; "sigue en ganga" es ruido. Un evento → un aviso → silencio hasta
+> el siguiente cambio.
+
+### 8.2 ¿Qué atributos tiene?
+
+**Evento origen** — catálogo cerrado de transiciones de los conceptos validados:
+cambio de veredicto (→🔥/✅/⚠️…) · entrada en tramo · cruce SMA200 · mínimo nuevo
+(cartera/seleccionadas) · RSI extremo · tránsito de estado de Empresa
+(radar ↔ seleccionada).
+
+**Severidad** — tres niveles:
+
+| Nivel | Ejemplo | Comportamiento |
+|---|---|---|
+| 🔴 **Actúa** | ⚠️ REVISAR o tramo alcanzado en TU posición | Mensaje individual inmediato, solo al dueño |
+| 🟠 **Oportunidad** | Nueva GANGA en seleccionadas | Mensaje individual a todos, filtrado por nivel de ruido |
+| ⚪ **Informativa** | Tránsitos del radar, movimientos menores | Sin interrupción: va al resumen semanal |
+
+**Enrutado** (decisiones 2026-07-16):
+- **Por defecto, todo a todos** (según severidad y nivel de ruido del perfil).
+- Lo específico de una posición (🔴) va **solo a su dueño**.
+- **Silencio personal por empresa**: cualquier Inversor puede decir "no me avises
+  más de Amazon" y deshacerlo cuando quiera; no afecta a los demás.
+
+**Resumen semanal** — **lunes 8:00**, a todos: agrupa lo ⚪ informativo (movimientos
+del radar, refresco de datos, acercamientos a zona razonable) con secciones comunes
+idénticas y la sección "tu cartera" **personalizada por receptor**. *(Lunes y no
+domingo: el refresco dominical de fundamentales depende de que el PC de Ale esté
+encendido en algún momento del domingo — el lunes 8:00 le da margen completo.)*
+
+**Contexto accionable**: cada alerta lleva su porqué con datos ("GANGA: cotiza 62€,
+objetivo 89€, potencial +43%"), nunca un "mira la hoja".
+
+**Horario operativo**: heredado — nada entre 00:00 y 08:00.
+
+### 8.3 ¿Qué NO forma parte de Alerta?
+
+- ❌ La lógica que detecta el cambio — vive en Decisión/Señal/Calidad; la Alerta
+  transporta, no calcula.
+- ❌ El canal (Telegram) y el formato — implementación.
+- ❌ Las consultas al bot — eso es pull del Inversor, otro mecanismo.
+
+### 8.4 ¿Qué la alimenta?
+
+Las transiciones de Decisión, Señal técnica, Calidad y estado de Empresa + el
+Inversor (perfil, cartera, silencios) para el enrutado. Nada más.
+
+### 8.5 ¿Quién la consume?
+
+Los Inversores, cada uno la suya. Las alertas no se archivan como conocimiento:
+el conocimiento vive en los conceptos; la alerta es solo el mensajero.
+
+*Fuentes: [alert fatigue — PagerDuty](https://www.pagerduty.com/resources/digital-operations/learn/alert-fatigue/) ·
+[SRE alerting best practices](https://incident.io/blog/sre-alerting-best-practices)*
+
+---
+
+## 9. EL MAPA COMPLETO — síntesis
+
+### 9.1 Relaciones entre conceptos
+
+```
+                         ┌─────────────────────────────┐
+                         │          EMPRESA            │
+                         │  identidad · GICS+plantilla │
+                         │  estado: cartera/seleccio-  │
+                         │  nada/radar/archivada       │
+                         └──────┬──────────────────────┘
+                                │ es el sujeto de
+        ┌───────────────┬───────┴────────┬─────────────────┐
+        ▼               ▼                ▼                 │
+  ┌───────────┐   ┌────────────┐   ┌──────────────┐        │
+  │  CALIDAD  │   │ VALORACIÓN │   │ SEÑAL TÉCNICA│        │
+  │ ¿buen     │   │ ¿qué vale? │   │ ¿buen        │        │
+  │ negocio?  │   │            │   │ momento?     │        │
+  └─────┬─────┘   └─────┬──────┘   └──────┬───────┘        │
+        │ gate          │ potencial       │ timing         │
+        └───────────────┼─────────────────┘                │
+                        ▼                                  │
+              ┌───────────────────┐                        │
+              │ DECISIÓN Y RANKING│  veredicto: 🔥✅🟡⏳⚠️  │
+              │ (lógica única)    │                        │
+              └─────────┬─────────┘                        │
+                        │ transiciones                     │
+                        ▼                                  │
+              ┌───────────────────┐     enruta por         │
+              │      ALERTA       │◄──────────────┐        │
+              │ 🔴🟠⚪ + resumen   │               │        │
+              │ semanal (lun 8h)  │               │        │
+              └─────────┬─────────┘               │        │
+                        ▼                         │        │
+              ┌───────────────────┐    ┌──────────┴─────┐  │
+              │     INVERSOR      │───►│    CARTERA     │──┘
+              │ perfil · tesis ·  │ 1:1│ posiciones     │ contiene
+              │ silencios         │    │ (detalle opc.) │ empresas
+              └───────────────────┘    └────────────────┘
+```
+
+### 9.2 La respuesta a la pregunta fundacional
+
+**¿Qué sabe el Búnker sobre una empresa?** Sabe:
+
+1. **Quién es** (Empresa: identidad, sector, cómo hay que analizarla).
+2. **Si es un buen negocio** (Calidad: rentabilidad, balance, trayectoria, foso).
+3. **Cuánto vale** (Valoración: intrínseco → objetivo → precio de entrada → potencial).
+4. **Si es buen momento** (Señal técnica: tendencia, temperatura, extremos, tramos).
+5. **Qué haría con ella** (Decisión y Ranking: veredicto y prioridad).
+6. **A quién le importa** (Inversor y Cartera: quién la tiene, quién la sigue, tesis).
+7. **Cuándo avisar** (Alerta: transiciones relevantes, a la persona correcta).
+
+### 9.3 Principios transversales del modelo (emergidos durante la Fase 2)
+
+1. **Objetivo vs. subjetivo**: los datos, señales y decisiones son únicos y
+   compartidos; las tesis, preferencias y carteras son de cada Inversor.
+2. **Parámetros con nombre**: ninguna constante enterrada en fórmulas; todo umbral
+   es un parámetro visible, con default global y ajuste por plantilla.
+3. **Plantillas por sector**: qué métricas y modelos aplican lo decide la plantilla
+   (derivada del GICS, sobrescribible por empresa).
+4. **Ley de subordinación técnica**: la técnica nunca elige la empresa, solo el momento.
+5. **Ley de transiciones**: se alerta del cambio, jamás se repite el estado.
+6. **Lógica única**: una sola Decisión para todo el Búnker; sin réplicas divergentes.
+7. **El Búnker opina, no ordena**: la ejecución es siempre humana.
+8. **Automático primero**: ningún dato del modelo depende de la disciplina de
+   registro de terceros; lo manual es opcional (detalle de cartera) o puntual y
+   asistido (foso).
