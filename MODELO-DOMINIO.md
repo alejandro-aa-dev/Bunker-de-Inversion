@@ -23,7 +23,7 @@ No cómo lo muestra.
 |---|---|
 | **Empresa** | ✅ Validado (2026-07-16) |
 | **Inversor** | 🔎 Descubierto al modelar Empresa — pendiente de pizarra |
-| Valoración | ⏳ En pizarra |
+| **Valoración** | ✅ Validado (2026-07-16) |
 | Calidad | Pendiente |
 | Señal técnica | Pendiente |
 | Ranking / Decisión | Pendiente |
@@ -107,7 +107,72 @@ Alerta trabajan siempre *sobre una Empresa*. Es el punto de unión del modelo
 
 ---
 
-## 2. INVERSOR 🔎 (descubierto — pendiente de pizarra)
+## 2. VALORACIÓN ✅
+
+*Validado por Ale el 2026-07-16.*
+
+### 2.1 ¿Qué significa exactamente?
+
+La **Valoración** es la opinión calculada del Búnker sobre **cuánto vale una
+Empresa**, con fecha. Responde a "¿qué vale?" — no a "¿qué hago?" (Decisión)
+ni a "¿es buen negocio?" (Calidad). Es **objetiva y compartida**: la misma para
+todos los Inversores; lo que cada uno haga con ella es su tesis personal.
+
+En el dominio existe **UNA** Valoración por Empresa (las tres réplicas del motor
+actual —Bunker USA/exUSA, Carteras, mini búnker— son un artefacto de
+implementación, redundancia R14 de la auditoría).
+
+### 2.2 ¿Qué atributos tiene?
+
+Cadena de cuatro eslabones (generaliza el motor actual, auditoría Parte B §2):
+
+1. **Valor intrínseco** — lo que valen los números del negocio según los modelos
+   que activa la **plantilla** de la Empresa. Cada plantilla activa **1..N modelos
+   del catálogo** (DCF, Graham, DDM, P/BV justo, NAV, mid-cycle…) y define su
+   **regla de síntesis** (media; el más prudente si divergen — regla heredada de COMP).
+2. **Precio objetivo combinado** — el intrínseco contrastado con opiniones externas
+   (consenso de analistas, InvestingPro) con ponderaciones por plantilla.
+   **Las fuentes externas son OPCIONALES** (decisión 2026-07-16): si no están
+   alimentadas, el precio objetivo se apoya solo en el intrínseco en vez de quedar
+   vacío. *(Esto sustituye la regla actual "si falta H, I o J → K vacío".)*
+3. **Margen de seguridad → precio de entrada** (precio objetivo × (1 − margen)).
+4. **Potencial** — distancia entre precio actual y precio objetivo.
+
+Transversales:
+- **Fecha de cálculo** y plantilla/modelos/parámetros usados (trazabilidad).
+- **Overrides manuales**: valor intrínseco manual y margen de seguridad — el
+  criterio de Ale siempre puede pisar el cálculo.
+- **Parámetros con nombre, definidos por plantilla** (con default global):
+  tasa exigida, crecimiento terminal, caps de crecimiento, ponderaciones de
+  síntesis… *(Hoy están hardcodeados en fórmulas: 9%, 2,5%, 15%/12%/6%/5,5%,
+  45/35/20… Mismo comportamiento, pero visibles, documentados y personalizables.)*
+
+### 2.3 ¿Qué NO forma parte de Valoración?
+
+- ❌ El **semáforo/DECISIÓN** (🔥/✅/🟡/⏳) — conclusión operativa → Ranking/Decisión.
+  La Valoración dice "vale 100 y cotiza a 70"; la Decisión dice "compra".
+- ❌ El **Filtro de Calidad** — juicio distinto ("¿es buen negocio?"), previo e
+  independiente. Hoy están entrelazados (gate BO); en el dominio son conceptos
+  separados que el Ranking combina.
+- ❌ El **precio de mercado** — la Valoración lo usa, no lo posee.
+
+### 2.4 ¿Qué la alimenta?
+
+- **Datos fundamentales** de la Empresa (FCF, EPS, BV, AFFO, EBITDA, DPS…) —
+  fuente automática tipo stockanalysis, frecuencia semanal (sin ruido).
+- **La plantilla de análisis** de la Empresa → modelos activos + parámetros.
+- **Opiniones externas** (opcionales): consenso de analistas, InvestingPro.
+- **Overrides de Ale**: intrínseco manual, margen de seguridad.
+
+### 2.5 ¿Quién la consume?
+
+- **Ranking/Decisión** — la combina con Calidad y precio para el veredicto.
+- **Alerta** — los cambios relevantes ("entró en zona de precio de entrada") son eventos alertables.
+- **Inversor** — cada uno la lee contra su tesis personal.
+
+---
+
+## 3. INVERSOR 🔎 (descubierto — pendiente de pizarra)
 
 Concepto emergido al modelar Empresa (2026-07-16): las personas del Búnker
 (Ale, Rubén, ampliable a familia/amigos). Apuntes acordados, pendientes de las 5 preguntas:
