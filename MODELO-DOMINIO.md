@@ -30,6 +30,8 @@ No cómo lo muestra.
 | **Cartera** | ✅ Validado (2026-07-16) |
 | **Alerta** | ✅ Validado (2026-07-16) — mapa completo |
 
+Catálogo de plantillas de análisis (10 plantillas + mapeo GICS): **`PLANTILLAS-ANALISIS.md`** ✅ Validado (2026-07-16).
+
 ---
 
 ## 1. EMPRESA ✅
