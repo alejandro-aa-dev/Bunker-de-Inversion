@@ -22,7 +22,7 @@ No cómo lo muestra.
 | Concepto | Estado |
 |---|---|
 | **Empresa** | ✅ Validado (2026-07-16) |
-| **Inversor** | 🔎 Descubierto al modelar Empresa — pendiente de pizarra |
+| **Inversor** | ✅ Validado (2026-07-16) |
 | **Valoración** | ✅ Validado (2026-07-16) |
 | **Calidad** | ✅ Validado (2026-07-16) |
 | **Señal técnica** | ✅ Validado (2026-07-16) |
@@ -405,14 +405,60 @@ Solo Calidad + Valoración + Señal técnica + parámetros. El cerebro es
 
 ---
 
-## 6. INVERSOR 🔎 (descubierto — pendiente de pizarra)
+## 6. INVERSOR ✅
 
-Concepto emergido al modelar Empresa (2026-07-16): las personas del Búnker
-(Ale, Rubén, ampliable a familia/amigos). Apuntes acordados, pendientes de las 5 preguntas:
+*Descubierto al modelar Empresa; validado por Ale el 2026-07-16. Referencia
+profesional: Investment Policy Statement (CFA Institute), reducido a escala
+familiar.*
 
-- Cada Inversor tiene **su propia Cartera**.
-- La relación Inversor↔Empresa contiene lo **subjetivo**: tesis personal
-  ("para mí está cara pero él la entiende y la mantiene"), perfil con que la ve
-  (dividendera / crecimiento / valor…) y **preferencias de alertas** (silenciar
-  avisos concretos sobre empresas concretas).
-- La Empresa y sus datos siguen siendo objetivos y compartidos.
+### 6.1 ¿Qué significa exactamente?
+
+Un **Inversor** es una persona que usa el Búnker: Ale, Rubén, y quien se sume
+(familia/amigos). Es el concepto que separa lo **objetivo** (Empresa, datos,
+Decisión — iguales para todos) de lo **subjetivo** (qué tengo, qué pienso, qué
+quiero que me avisen — de cada uno).
+
+**Transparencia** (decisión 2026-07-16): mesa compartida — **todos los Inversores
+ven todo** (carteras incluidas). Al ser pocos y de confianza, no hay casilleros
+privados.
+
+### 6.2 ¿Qué atributos tiene?
+
+**Identidad**: nombre + canal de aviso (chat de Telegram).
+
+**Perfil** — el "IPS de bolsillo", 3 preguntas, se contesta una vez:
+- **Enfoque**: dividendos / crecimiento / valor / mixto.
+- **Horizonte**: años vista.
+- **Nivel de ruido**: ¿solo oportunidades claras o también avisos intermedios?
+  (gobierna cuántas alertas recibe por defecto).
+
+**Relación con cada Empresa**:
+- **Tesis personal**: texto libre + postura (*mantengo / vigilo / quiero ampliar*).
+- **Preferencias de alerta**: silenciar avisos concretos sobre empresas concretas.
+
+**Su Cartera** (concepto 7) — con regla de **autogestión** (decisión 2026-07-16):
+cada Inversor registra él mismo sus compras y ventas conversando con el bot, sin
+pasar por Ale. *(El "cómo" —comandos vs lenguaje natural con IA, Apps Script vs
+VM— es decisión de implementación diferida a Fase 3; análisis preliminar: cabe en
+la arquitectura actual, bot Apps Script + Gemini ya integrado, sin VM.)*
+
+### 6.3 ¿Qué NO forma parte de Inversor?
+
+- ❌ Los datos y decisiones del Búnker — los consume, no los altera. Silenciar
+  una alerta no cambia el veredicto de la empresa.
+- ❌ La Cartera en sí (posiciones, precios medios) — la *tiene*, pero es concepto aparte.
+- ❌ Roles técnicos (administración del sistema) — implementación.
+
+### 6.4 ¿Qué lo alimenta?
+
+- **Solo Ale da de alta Inversores** (decisión 2026-07-16).
+- Cada Inversor declara su perfil, sus tesis y sus operaciones (autogestión).
+
+### 6.5 ¿Quién lo consume?
+
+- **Alerta** — el consumidor principal: decide *a quién* enviar *qué*, filtrado
+  por perfil, cartera y preferencias (fin de las alertas café para todos).
+- **Cartera** — cada una pertenece a un Inversor.
+- **La presentación** (bot) — cada uno pregunta por lo suyo.
+
+*Fuente: [Elements of an IPS for Individual Investors (CFA Institute)](https://rpc.cfainstitute.org/sites/default/files/-/media/documents/article/position-paper/investment-policy-statement-individual-investors.pdf)*
