@@ -171,16 +171,49 @@ Al finalizar responde obligatoriamente:
 
 ---
 
-## Resultado — Primera revisión
+## Resultado — Primera revisión (ejecutada 2026-07-16)
 
-*(Pendiente: registrar aquí los hallazgos del asesor, la posición de Claude en
-las discrepancias, y la decisión de Ale para cada uno.)*
+**Caveat metodológico declarado por el asesor**: su sistema de archivos solo le
+cargó los documentos parcialmente; declinó inventar citas de secciones no
+leídas (correcto según las reglas de rigor). La 2ª revisión debe confirmar los
+hallazgos sobre el texto completo.
+
+### Hallazgos de arquitectura
 
 | # | Clase | Impacto | Concepto | Hallazgo | Posición Claude | Decisión Ale |
 |---|---|---|---|---|---|---|
-| — | — | — | — | *(pendiente de ejecutar la review)* | — | — |
+| 1 | 🟡 | ALTO | Decisión y Ranking | Dos responsabilidades: ordenar (ranking) y clasificar (veredicto). Propone NO separar ahora; registrar como deuda y observar | DE ACUERDO. La unión fue deliberada (el veredicto y el orden comparten insumos); registrar deuda cuesta cero y deja el trigger claro: si evolucionan por separado, se parte | *(pendiente)* |
+| 2 | 🟡 | ALTO | Empresa | Mezcla identidad permanente (cambia poco) con estado operativo radar/seleccionada/archivada (cambia siempre). Propone documentar "Estado" como candidato a independizarse | DE ACUERDO. Ritmos de cambio distintos es un criterio real de partición; hoy la simplicidad gana. Documentar como deuda | *(pendiente)* |
+| 3 | 🟡 | MEDIO | Calidad | El override humano del foso mete juicio experto dentro de una evaluación automática. Propone documentarlo como "excepción consciente del modelo" | DE ACUERDO. Ya está diseñado como override trazable; añadir la etiqueta de excepción consciente es una línea en MODELO-DOMINIO.md | *(pendiente)* |
+| 4 | 🟡 | MEDIO | Plantillas | Serán el punto de mayor deuda futura (nuevos activos/métodos/métricas). Propone tratarlas desde ya como "conocimiento reemplazable" | DE ACUERDO y en gran parte YA ES ASÍ: catálogo con parámetros con nombre, editable, sobrescribible. Hacer explícito el principio en PLANTILLAS-ANALISIS.md | *(pendiente)* |
+| 5 | ⚪ | MEDIO | Calidad (principio) | "Calidad primero" resiste; su punto débil es operativo: Calidad es menos reproducible que Valoración (dos usuarios discreparían más) | DE ACUERDO como observación; es característica, no defecto — la mesa compartida asume UNA Calidad (la del Búnker), no una por usuario. Sin acción | *(pendiente)* |
+| 6 | 🟡 | MEDIO | Dominio completo | Extensibilidad buena hacia IA/fuentes/ETFs; opciones y derivados romperían el dominio (no hay Empresa subyacente simple). El dominio está especializado en renta variable | DE ACUERDO. Es límite de alcance deliberado (la Visión analiza empresas), no deuda. Documentar el límite, sin acción | *(pendiente)* |
+| 7 | ⚪ | BAJO | Principios | "Informa, no decide" es el principio mejor protegido; no consiguió romperlo | Sin acción | *(pendiente)* |
+| 8 | 🟡 | BAJO | Valoración | OBS-1: no mantener 65/25/10; fusionar externos en 65% intrínseco / 35% evidencia externa (InvestingPro absorbe el consenso). Dos pesos separados aparentan una independencia estadística que no existe | DE ACUERDO con matiz: la fusión además SIMPLIFICA la regla de redistribución de ausentes (un solo peso externo). Es cambio de parámetros, no de dominio → registrarlo y aplicarlo en planificación | *(pendiente)* |
 
-**Veredicto del asesor (1ª revisión)**: *(pendiente)*
+### Respuestas de metodología (Tarea 5 — no bloquean la fase)
+
+| # | Tema | Recomendación del asesor | Posición Claude | Decisión Ale |
+|---|---|---|---|---|
+| M1 | OBS-1 ponderación | Fusionar: intrínseco 65% / externo 35% | DE ACUERDO (ver hallazgo 8) | *(pendiente)* |
+| M2 | OBS-2 EV/Sales | Mantener exactamente como está (solo contraste) | DE ACUERDO — cierra OBS-2 sin cambios | *(pendiente)* |
+| M3 | Margen de seguridad | Mantener manual + guía orientativa: incertidumbre baja 10-15% · media 20% · alta 30-35% | DE ACUERDO — es documentación, no regla; el criterio sigue siendo de Ale | *(pendiente)* |
+| M4 | Parámetros globales | No recalcular automáticamente; revisión explícita anual o si el tipo libre de riesgo se mueve >X pp | DE ACUERDO — regla de gobernanza simple; fijar X en planificación (propongo 1 pp) | *(pendiente)* |
+| M5 | Síntesis del prudente | Excepción: si un modelo falla por motivo técnico identificable (datos corruptos, división por cero), excluirlo ANTES de aplicar la regla del prudente | DE ACUERDO — distingue "modelo que grita barato/caro" de "modelo roto"; hoy ambos castigan igual | *(pendiente)* |
+
+**Veredicto del asesor (1ª revisión)**: **SÍ cerraría la fase.** "Los problemas
+encontrados son de evolución, no de consistencia. No hay contradicciones
+fuertes, relaciones circulares peligrosas ni ambigüedades que impidan
+continuar. Los ocho conceptos forman un dominio limpio: hechos (Empresa),
+evaluaciones (Calidad y Valoración), síntesis (Decisión), personalización
+(Inversor y Cartera) y comunicación (Alerta)."
+
+**Posición global de Claude**: coincido con el veredicto y con los 13 puntos —
+no hay discrepancia de fondo que Ale deba arbitrar, solo decisiones de
+aceptar/registrar. Los hallazgos 1-7 son deuda documentable (sin tocar el
+modelo); el 8/M1 y M3-M5 son cambios de metodología para la planificación.
+Nota: el asesor emitió con lectura parcial de los documentos (caveat arriba);
+la 2ª revisión de segundo orden servirá también de verificación completa.
 
 ## Resultado — Segunda revisión (segundo orden)
 
