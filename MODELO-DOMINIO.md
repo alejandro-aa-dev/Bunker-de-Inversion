@@ -27,7 +27,7 @@ No cómo lo muestra.
 | **Calidad** | ✅ Validado (2026-07-16) |
 | **Señal técnica** | ✅ Validado (2026-07-16) |
 | **Decisión y Ranking** | ✅ Validado (2026-07-16) |
-| Cartera | Pendiente (ahora es *por Inversor*) |
+| **Cartera** | ✅ Validado (2026-07-16) |
 | Alerta | Pendiente (personalizable *por Inversor*) |
 
 ---
@@ -462,3 +462,61 @@ la arquitectura actual, bot Apps Script + Gemini ya integrado, sin VM.)*
 - **La presentación** (bot) — cada uno pregunta por lo suyo.
 
 *Fuente: [Elements of an IPS for Individual Investors (CFA Institute)](https://rpc.cfainstitute.org/sites/default/files/-/media/documents/article/position-paper/investment-policy-statement-individual-investors.pdf)*
+
+---
+
+## 7. CARTERA ✅
+
+*Validado por Ale el 2026-07-16. Nota metodológica: la primera propuesta (registro
+contable de operaciones, dividendos, TWR — el estándar de los trackers
+profesionales) fue rechazada conscientemente: el Búnker es un asistente de compra,
+no un contable de carteras, y un dato que depende de la disciplina de registro de
+terceros es un dato muerto.*
+
+### 7.1 ¿Qué significa exactamente?
+
+La **Cartera** es la lista de posiciones reales de un Inversor: qué empresas tiene.
+Es la frontera entre el Búnker que opina (radar, decisiones) y el dinero real.
+Hay una por Inversor; todas visibles por todos (mesa compartida).
+
+**Principio rector (decisión 2026-07-16): el Búnker no necesita datos privados de
+las carteras para funcionar.** Su estructura opera con el dato mínimo (qué empresa
+tiene quién); el detalle económico es opcional y de cada uno.
+
+### 7.2 ¿Qué atributos tiene?
+
+**Una posición = empresa + (opcional) nº de acciones y precio medio + fecha del
+último cambio** (la pone el bot automáticamente).
+
+Dos niveles de la misma estructura:
+- **Nivel mínimo (obligatorio)**: "tengo esta" / "la he vendido". Un mensaje al bot
+  al comprar o vender — no es contabilidad, es un aviso puntual. Si alguien ni eso,
+  Ale como admin lo corrige en un minuto.
+- **Nivel opcional (quien quiera; previsiblemente solo Ale)**: nº de acciones y
+  precio medio → activa avisos adicionales con contexto ("estás un −12% respecto a
+  tu precio medio"). Quien no lo rellene recibe las alertas estándar igualmente.
+
+**Descartado del dominio** (decisión 2026-07-16, reabrible si el Búnker cambia de
+ambición): registro de operaciones como dato primario, dividendos cobrados,
+ingresos anuales, yield on cost, rentabilidad TWR y límites de concentración
+(dependían de datos cuya disciplina de registro no existirá).
+
+### 7.3 ¿Qué NO forma parte de Cartera?
+
+- ❌ Las Decisiones sobre sus empresas — las consume, no las fabrica.
+- ❌ La tesis ("por qué la tengo") — es del Inversor.
+- ❌ Los precios de mercado — los usa, no los posee.
+- ❌ La fiscalidad.
+
+### 7.4 ¿Qué la alimenta?
+
+- **Su Inversor** vía autogestión (bot): altas y bajas de posición. Nadie escribe
+  en cartera ajena; Ale como administrador puede corregir cualquiera.
+- **Precios de mercado** (Google Finance) para contexto — automático.
+
+### 7.5 ¿Quién la consume?
+
+- **Alerta** — consumidor VIP: tramos de promediar, ⚠️ REVISAR por deterioro,
+  mínimos en cartera; con contexto extra para quien rellenó el nivel opcional.
+- **Los Inversores** vía bot (mesa compartida).
+- **La Decisión** — el veredicto ⚠️ REVISAR existe *porque* existe la posición.
