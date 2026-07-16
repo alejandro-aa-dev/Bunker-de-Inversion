@@ -1,11 +1,12 @@
 # REVIEW DEL ASESOR — Fase 2: Modelo de Dominio
 
-*(Paquete preparado el 2026-07-16 para la revisión crítica del asesor (ChatGPT),
-según METODOLOGIA.md §6. Primera instancia del
-`PROTOCOLO-REVISION-ARQUITECTURA.md`. **v3**: añade reglas de rigor —fundamentar
-cada crítica, error ≠ preferencia—, cohesión por concepto, prueba de
-sustitución, formulación neutral de extensibilidad y veredicto final
-obligatorio.)*
+*(Paquete preparado el 2026-07-16, según METODOLOGIA.md §6. Primera instancia
+del `PROTOCOLO-REVISION-ARQUITECTURA.md` v1. **Versión FINAL — CONGELADA**
+tras tres rondas de feedback (10/10 del asesor): reglas de rigor completas
+—fundamentar o HIPÓTESIS, error ≠ preferencia, anti-sobreingeniería, criterio
+de estabilidad, prohibido "depende"—, orden de tareas estructural→romper→
+principios→deuda, y veredicto obligatorio. Pendiente tras esta primera pasada:
+la segunda revisión de segundo orden, días después, según el protocolo §3.)*
 
 ## Cómo usar este paquete
 
@@ -17,10 +18,12 @@ obligatorio.)*
 2. Pegar el prompt de la sección siguiente tal cual.
 3. Registrar los hallazgos del asesor en este mismo archivo (§ Resultado); las
    discrepancias Claude↔asesor las resuelve Ale.
+4. Días después, ejecutar la **segunda revisión** (problemas de segundo orden,
+   protocolo §3) y registrarla también aquí.
 
 ---
 
-## Prompt para el asesor
+## Prompt para el asesor (primera revisión)
 
 Actúas como **revisor crítico de arquitectura de dominio** de un sistema de
 análisis de inversión value ("Búnker de Inversión"). No eres una cámara de eco:
@@ -54,6 +57,14 @@ cuestionario.
 - **No marques como BLOQUEANTE una diferencia de criterio o de estilo de
   diseño.** Un hallazgo solo será BLOQUEANTE si produce contradicciones,
   ambigüedad, pérdida de información o imposibilita la evolución del sistema.
+- **No propongas nuevos conceptos, relaciones o capas** si el beneficio
+  arquitectónico no compensa claramente el aumento de complejidad. Si los
+  propones, demuestra ese beneficio.
+- **Si propones dividir un concepto**, explica también por qué la división no
+  debería esperar a una versión futura.
+- **Prohibido responder "depende de preferencias"**: cuando existan varias
+  alternativas razonables, explica cuál elegirías tú como arquitecto
+  responsable y por qué.
 
 ### TAREA 1 — Revisión estructural
 
@@ -72,28 +83,7 @@ Decisión y Ranking, Inversor, Cartera, Alerta):
 6. Busca **contradicciones internas**: reglas o principios del modelo que
    entren en conflicto entre sí.
 
-### TAREA 2 — Ataca los principios
-
-Intenta demostrar que alguno de los **principios fundamentales** del proyecto
-(los 8 principios transversales de la síntesis, la filosofía calidad-primero,
-"informa, no decide") es **incorrecto, insuficiente o incompatible** con el
-resto del modelo. Si no lo consigues, di cuál resistió peor el ataque.
-
-### TAREA 3 — Deuda conceptual, extensibilidad y sustitución
-
-1. Señala conceptos que hoy parecen suficientes pero que probablemente
-   generarán **deuda conceptual** cuando el sistema evolucione (conceptos que
-   se quedarán pequeños y habrá que partir o renombrar).
-2. **Evalúa la estabilidad del modelo** ante la incorporación de nuevos tipos
-   de activos (opciones, ETFs, criptomonedas, fondos), nuevas fuentes de datos
-   y nuevas capacidades analíticas (IA, macroeconomía): ¿qué conceptos
-   tendrían que cambiar y cuánto?
-3. **Prueba de sustitución**: imagina que dentro de cinco años se sustituyen
-   completamente los indicadores técnicos, las fuentes de datos o el método de
-   valoración. ¿Qué conceptos permanecerían intactos y cuáles deberían
-   rediseñarse? Si cambian demasiados conceptos, explica por qué.
-
-### TAREA 4 — Intenta romper el modelo
+### TAREA 2 — Intenta romper el modelo
 
 No asumas que el diseño es correcto. Intenta encontrar:
 
@@ -106,6 +96,27 @@ No asumas que el diseño es correcto. Intenta encontrar:
 
 Si después de intentarlo no encuentras problemas relevantes, **explica por
 qué** el modelo resiste.
+
+### TAREA 3 — Ataca los principios
+
+Intenta demostrar que alguno de los **principios fundamentales** del proyecto
+(los 8 principios transversales de la síntesis, la filosofía calidad-primero,
+"informa, no decide") es **incorrecto, insuficiente o incompatible** con el
+resto del modelo. Si no lo consigues, di cuál resistió peor el ataque.
+
+### TAREA 4 — Deuda conceptual, extensibilidad y sustitución
+
+1. Señala conceptos que hoy parecen suficientes pero que probablemente
+   generarán **deuda conceptual** cuando el sistema evolucione (conceptos que
+   se quedarán pequeños y habrá que partir o renombrar).
+2. **Evalúa la estabilidad del modelo** ante la incorporación de nuevos tipos
+   de activos (opciones, ETFs, criptomonedas, fondos), nuevas fuentes de datos
+   y nuevas capacidades analíticas (IA, macroeconomía): ¿qué conceptos
+   tendrían que cambiar y cuánto?
+3. **Prueba de sustitución**: imagina que dentro de cinco años se sustituyen
+   completamente los indicadores técnicos, las fuentes de datos o el método de
+   valoración. ¿Qué conceptos permanecerían intactos y cuáles deberían
+   rediseñarse? Si cambian demasiados conceptos, explica por qué.
 
 ### TAREA 5 — Preguntas de metodología de inversión (secundarias)
 
@@ -151,7 +162,16 @@ Al finalizar responde obligatoriamente:
 
 ---
 
-## Resultado de la review
+## Prompt para la segunda revisión (días después, protocolo §3)
+
+> Asume que todos los problemas detectados en la primera revisión han sido
+> resueltos. Busca ahora **problemas de segundo orden** que solo aparecen
+> cuando el modelo madura. Aplican las mismas reglas de rigor, formato de
+> salida y conclusión obligatoria de la primera revisión.
+
+---
+
+## Resultado — Primera revisión
 
 *(Pendiente: registrar aquí los hallazgos del asesor, la posición de Claude en
 las discrepancias, y la decisión de Ale para cada uno.)*
@@ -160,4 +180,12 @@ las discrepancias, y la decisión de Ale para cada uno.)*
 |---|---|---|---|---|---|---|
 | — | — | — | — | *(pendiente de ejecutar la review)* | — | — |
 
-**Veredicto del asesor**: *(pendiente)*
+**Veredicto del asesor (1ª revisión)**: *(pendiente)*
+
+## Resultado — Segunda revisión (segundo orden)
+
+| # | Clase | Impacto | Concepto | Hallazgo | Posición Claude | Decisión Ale |
+|---|---|---|---|---|---|---|
+| — | — | — | — | *(pendiente)* | — | — |
+
+**Veredicto del asesor (2ª revisión)**: *(pendiente)*

@@ -41,6 +41,17 @@ El rol con el que se trabaja cambia con la fase, y quien trabaje en el proyecto 
 - **Asesor (ChatGPT)** → revisión crítica, arquitectura, metodología, cuestionar supuestos.
 - Ninguno actúa como cámara de eco del otro: las discrepancias se argumentan y las resuelve **Ale**, que es quien decide siempre.
 
-## 7. Procesos heredados (regla de la migración)
+## 7. Protocolo de revisión de arquitectura
+
+> **Toda fase de arquitectura deberá superar el protocolo de revisión
+> (`PROTOCOLO-REVISION-ARQUITECTURA.md`) antes de darse por cerrada.**
+
+El protocolo (v1, congelado 2026-07-16) define el estándar de toda revisión
+arquitectónica: revisor crítico con reglas de rigor, doble revisión (primera
+destructiva + segunda de segundo orden días después), hallazgos fundamentados
+y clasificados clase×impacto, y veredicto obligatorio. Vale para cualquier
+revisor (Claude, ChatGPT u otra herramienta).
+
+## 8. Procesos heredados (regla de la migración)
 
 Los componentes heredados (tareas, hojas ocultas, activos no localizados) permanecen **sin modificaciones** durante la migración. Solo cuando el nuevo sistema reproduzca completamente su funcionalidad se decide si se integran, archivan o retiran. Hasta entonces son patrimonio histórico del proyecto. (Origen: respuestas PA-001/002/003 del acta de cierre de la Fase 0.)
