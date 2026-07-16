@@ -663,3 +663,33 @@ el conocimiento vive en los conceptos; la alerta es solo el mensajero.
 8. **Automático primero**: ningún dato del modelo depende de la disciplina de
    registro de terceros; lo manual es opcional (detalle de cartera) o puntual y
    asistido (foso).
+
+---
+
+## 10. DEUDA CONCEPTUAL REGISTRADA
+
+*(Origen: primera revisión del asesor según PROTOCOLO-REVISION-ARQUITECTURA.md,
+2026-07-16 — veredicto: cerrar la fase. Hallazgos aceptados por Ale ("sí a
+todo"). Son observaciones de evolución, NO cambios: el modelo queda como está
+y estos apuntes marcan dónde partirlo si algún día crece. Detalle completo en
+REVIEW-ASESOR-FASE-2.md.)*
+
+1. **Decisión y Ranking tiene dos responsabilidades latentes**: clasificar
+   (veredicto) y ordenar (prioridad). Conviven bien porque comparten insumos.
+   *Trigger de partición*: si en el futuro evolucionan por separado (p. ej.
+   rankings alternativos sobre los mismos veredictos), se dividen.
+2. **Empresa mezcla identidad (casi inmutable) con estado operativo
+   (radar/seleccionada/archivada, cambia continuamente)**. Ritmos de cambio
+   distintos. *Candidato a independizarse*: el Estado, si el ciclo de vida se
+   enriquece (más estados, más transiciones, historial).
+3. **El override humano del foso es una EXCEPCIÓN CONSCIENTE del modelo**:
+   introduce juicio experto dentro de una evaluación por lo demás automática.
+   Se acepta porque el foso es la dimensión donde el juicio humano supera a las
+   métricas; la mitigación es su trazabilidad (queda registrado quién y cuándo).
+4. **El dominio está especializado en renta variable** (empresas cotizadas).
+   ETFs, fondos, nuevas fuentes o IA encajarían con cambios menores; opciones y
+   derivados NO caben sin rediseño (no hay "Empresa" como subyacente simple).
+   Es un límite de alcance deliberado, coherente con la Visión, no una carencia.
+5. **Calidad es el concepto menos reproducible** (por el juicio del foso):
+   dos analistas discreparían más en Calidad que en Valoración. Característica
+   asumida, no defecto: en la mesa compartida existe UNA Calidad, la del Búnker.

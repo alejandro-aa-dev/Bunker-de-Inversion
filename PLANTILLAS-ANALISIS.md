@@ -21,6 +21,9 @@ igual en todas las plantillas.
 - El **margen de seguridad NO lo fija la plantilla**: es manual por empresa,
   criterio de Ale (10-35% orientativo). *"No es lo mismo NVIDIA que una startup
   de semiconductores."* (Decisión 2026-07-16.)
+  **Guía orientativa** (decisión M3 de la review del asesor, 2026-07-16 — es
+  guía, nunca regla; la decisión sigue siendo humana): incertidumbre baja →
+  10-15% · media → 20% · alta → 30-35%.
 - El catálogo está **completo por adelantado** (decisión 2026-07-16): cualquier
   empresa futura, del sector que sea, cae en una plantilla sin trabajo previo.
 
@@ -34,14 +37,22 @@ cumplen solo el 24-45% de las veces, con sesgo optimista sistemático de +9,4% y
 54% de acierto direccional (una moneda al aire), por incentivos estructurales de
 la banca de inversión.
 
-**Ponderación vigente (2026-07-16), parámetro global único:**
+**Ponderación vigente (2026-07-16, decisión M1 de la review del asesor —
+sustituye al 65/25/10 del mismo día), parámetro global único:**
 
 ```
-PESO_INTRINSECO = 65% · PESO_INVESTINGPRO = 25% · PESO_ANALISTAS = 10%
+PESO_INTRINSECO = 65% · PESO_EXTERNO = 35%
 ```
 
+- **Las fuentes externas se fusionan en un solo peso** (InvestingPro absorbe al
+  consenso de analistas): mantener dos pesos separados aparentaba una
+  independencia estadística que no existe — los modelos de InvestingPro usan el
+  consenso como insumo (OBS-1, INVESTIGACION-FIABILIDAD-VALORACION.md).
+- Dentro del 35%: media de las fuentes externas disponibles (si están las dos);
+  si solo hay una, ella sola es el 35%.
 - Uniforme para todas las plantillas (ajustable por plantilla si algún día hace falta).
 - Externos ausentes → su peso se redistribuye al intrínseco (hasta 100% intrínseco).
+  La fusión simplifica esta regla: un único peso externo que existe o no existe.
 
 *Fuentes: [accuracy multi-dimensional de price targets](https://www.sciencedirect.com/science/article/abs/pii/S1059056024000960) ·
 [18 años de datos](https://anachart.com/how-accurate-are-analyst-price-targets/) ·
@@ -176,9 +187,26 @@ nombre (valores por defecto = los actuales, verificados en auditoría):
 | P_AFFO_OBJETIVO | 20 | REIT |
 | PESOS_REIT (AFFO/NAV) | 60/40 | REIT |
 | UMBRAL_DIVERGENCIA_MODELOS | 1,5× | Síntesis COMP (regla del prudente) |
-| PESO_INTRINSECO / IP / ANALISTAS | 65/25/10 | §2 (corregido 2026-07-16) |
+| PESO_INTRINSECO / EXTERNO | 65/35 | §2 (fusión M1, review 2026-07-16) |
 | UMBRAL_BUENA_COMPRA / RAZONABLE | 25% / 10% | Veredicto (Decisión) |
 | TRAMOS_TECNICOS | 0/−10/−20% vs SMA200 | Señal técnica |
 
 *(El catálogo completo de parámetros, incluidos los de TECH/FARMA/TELECOM que no
 existían, se cerrará en el documento de parámetros de la planificación de Fase 3.)*
+
+**Reglas de gobernanza** (decisiones M4/M5 de la review del asesor, 2026-07-16):
+
+- **Revisión de parámetros** (M4): los parámetros globales NO se recalculan
+  automáticamente; se revisan explícitamente **una vez al año o cuando el tipo
+  libre de riesgo se mueva más de 1 punto porcentual** desde la última revisión.
+  Cambiarlos es siempre decisión de Ale.
+- **Excepción a la regla del prudente** (M5): si un modelo de valoración falla
+  por motivo **técnico identificable** (dato corrupto, división por cero, insumo
+  ausente), se **excluye de la síntesis** antes de aplicar la regla del prudente.
+  La regla castiga discrepancias de opinión entre modelos, no averías.
+
+**Principio del catálogo** (hallazgo 4 de la review, 2026-07-16): las plantillas
+son **conocimiento reemplazable** — el componente del dominio que más cambiará
+con los años (nuevos métodos, nuevas métricas). El resto del modelo no debe
+acoplarse a su contenido: solo a que "toda Empresa tiene una plantilla que
+activa modelos y umbrales".
