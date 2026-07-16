@@ -25,7 +25,7 @@ No cómo lo muestra.
 | **Inversor** | 🔎 Descubierto al modelar Empresa — pendiente de pizarra |
 | **Valoración** | ✅ Validado (2026-07-16) |
 | **Calidad** | ✅ Validado (2026-07-16) |
-| Señal técnica | Pendiente |
+| **Señal técnica** | ✅ Validado (2026-07-16) |
 | Ranking / Decisión | Pendiente |
 | Cartera | Pendiente (ahora es *por Inversor*) |
 | Alerta | Pendiente (personalizable *por Inversor*) |
@@ -252,7 +252,83 @@ Flujo acordado (2026-07-16):
 
 ---
 
-## 4. INVERSOR 🔎 (descubierto — pendiente de pizarra)
+## 4. SEÑAL TÉCNICA ✅
+
+*Validado por Ale el 2026-07-16. Investigación previa: SMA200 como indicador de
+régimen (Faber, Siegel), momentum de máximos de 52 semanas vs "cuchillo cayendo",
+evidencia sobre Fibonacci/Gann (fuentes al pie).*
+
+### 4.1 ¿Qué significa exactamente?
+
+La **Señal técnica** es lo que el Búnker sabe sobre el **comportamiento del precio**
+de una Empresa: tendencia, temperatura de corto plazo y extremos. Responde a una
+única pregunta: **"¿es buen momento para ejecutar?"** — nunca "¿qué compro?".
+
+**Ley de subordinación** (principio del dominio, validado 2026-07-16):
+
+> La técnica nunca elige la empresa; solo el momento. Solo se escucha sobre
+> empresas que ya pasaron Calidad y están baratas según Valoración.
+
+Esto salva al sistema del "cuchillo cayendo": comprar mínimos de cualquier cosa
+pierde dinero (evidencia); comprar mínimos de un buen negocio infravalorado es la
+disciplina value. El sistema antiguo ya lo hacía de facto (tramos solo con semáforo
+GANGA/BUENA); aquí se convierte en ley explícita.
+
+### 4.2 ¿Qué atributos tiene?
+
+Cuatro lecturas + un plan, todo 100% automático:
+
+1. **Tendencia** — precio vs SMA200 y distancia (el indicador de régimen con más
+   respaldo empírico). Hereda las alertas actuales (🔴 bajo SMA / 🟡 ≤2%).
+2. **Temperatura de corto plazo** — RSI (sobreventa/sobrecompra).
+3. **Extremos** — distancia a máximo/mínimo de 52 semanas y mínimos 1m/3m/6m/1año.
+   **Reencuadre validado**: un mínimo nuevo NO es señal de compra autónoma; es
+   *contexto de oportunidad* que solo significa algo en empresas seleccionadas o
+   en cartera.
+4. **Plan de entrada por tramos** — niveles escalonados como **parámetros con
+   nombre** (default heredado: 0% / −10% / −20% vs SMA200). La mejor pieza técnica
+   del búnker antiguo: convierte "comprar barato" en disciplina por etapas.
+5. **Fecha/frescura** de la lectura.
+
+La técnica es **universal, sin plantillas por sector** (a diferencia de Valoración
+y Calidad): complejidad solo donde aporta.
+
+**Indicadores descartados deliberadamente** (decisión 2026-07-16, delegada por Ale
+al criterio investigado): MACD y Bollinger (redundantes con SMA200+RSI, más ruido
+sin más información) y **Fibonacci/Gann** (evidencia académica mixta o nula; exigen
+elección subjetiva de puntos de anclaje → inautomatizables de forma fiable; y son
+herramientas de trading de corto plazo — responden una pregunta que el Búnker no
+hace). TradingView queda como herramienta personal de pantalla de Ale, fuera del
+dominio del Búnker.
+
+### 4.3 ¿Qué NO forma parte de Señal técnica?
+
+- ❌ La decisión de compra — la técnica es una *condición*, el Ranking decide.
+- ❌ Valoración y Calidad — la técnica no sabe si el negocio es bueno ni qué vale.
+- ❌ Las alertas — consumen la señal, no son la señal.
+- ❌ Predicciones — describe el presente del precio; no pronostica.
+
+### 4.4 ¿Qué la alimenta?
+
+- **Google Finance (OHLCV)** exclusivamente — pata 100% cubierta y automática
+  (INVESTIGACION-ANALISIS-SECTORIAL.md §3.1). Frecuencia diaria, dentro del horario
+  operativo (8:00-24:00). Cero mantenimiento manual.
+
+### 4.5 ¿Quién la consume?
+
+- **Ranking/Decisión** — como dimensión de *timing* del veredicto.
+- **Alerta** — cruces de SMA200, entrada en tramos, mínimos nuevos (cartera/
+  seleccionadas), RSI extremo.
+- **Inversor** — cada uno la lee contra sus posiciones y su tesis.
+
+*Fuentes: [Faber — Quantitative Approach to TAA](https://mebfaber.com/wp-content/uploads/2016/05/SSRN-id962461.pdf) ·
+[52-week high momentum (George & Hwang)](https://www.bauer.uh.edu/tgeorge/papers/gh4-paper.pdf) ·
+[Fibonacci: evidencia empírica](https://www.sciencedirect.com/science/article/abs/pii/S0957417421012495) ·
+[Magic numbers in the Dow](https://openaccess.city.ac.uk/id/eprint/16276/1/magic%20numbers%20in%20the%20dow.pdf)*
+
+---
+
+## 5. INVERSOR 🔎 (descubierto — pendiente de pizarra)
 
 Concepto emergido al modelar Empresa (2026-07-16): las personas del Búnker
 (Ale, Rubén, ampliable a familia/amigos). Apuntes acordados, pendientes de las 5 preguntas:
