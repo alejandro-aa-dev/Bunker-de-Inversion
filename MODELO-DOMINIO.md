@@ -24,7 +24,7 @@ No cómo lo muestra.
 | **Empresa** | ✅ Validado (2026-07-16) |
 | **Inversor** | 🔎 Descubierto al modelar Empresa — pendiente de pizarra |
 | **Valoración** | ✅ Validado (2026-07-16) |
-| Calidad | Pendiente |
+| **Calidad** | ✅ Validado (2026-07-16) |
 | Señal técnica | Pendiente |
 | Ranking / Decisión | Pendiente |
 | Cartera | Pendiente (ahora es *por Inversor*) |
@@ -172,7 +172,87 @@ Transversales:
 
 ---
 
-## 3. INVERSOR 🔎 (descubierto — pendiente de pizarra)
+## 3. CALIDAD ✅
+
+*Validado por Ale el 2026-07-16. Investigación previa: Piotroski F-Score,
+factor calidad MSCI, Economic Moat de Morningstar (fuentes al pie).*
+
+### 3.1 ¿Qué significa exactamente?
+
+La **Calidad** es el juicio del Búnker sobre si una Empresa es **un buen negocio**,
+independientemente de su precio. Responde a "¿merece este negocio mi dinero a algún
+precio?"; la Valoración responde después "¿a qué precio?". Es el **guardián del
+sistema**: lo que no pasa Calidad no se valora en serio (rol de gate que ya cumple
+el filtro actual).
+
+### 3.2 ¿Qué atributos tiene?
+
+**Cuatro dimensiones** (las dos primeras heredan del filtro actual, que ya era
+sectorial; las dos nuevas salen de la investigación):
+
+| Dimensión | Qué mide | Cómo | Automático |
+|---|---|---|---|
+| **Rentabilidad del negocio** | Nivel: ROIC, márgenes… según plantilla | Umbrales por plantilla (hereda del filtro 2 capas) | ✅ |
+| **Solidez del balance** | Deuda sostenible | ND/EBITDA + cobertura de intereses, por plantilla | ✅ |
+| **Trayectoria** ⭐ | Mejora/deterioro año contra año + estabilidad histórica | Estilo Piotroski, con ~5 años de datos | ✅ |
+| **Foso (moat)** ⭐ | Ventaja competitiva duradera | Juicio humano asistido (ver 3.2.1) | ❌ |
+
+- **Score 0-100 por dimensión + veredicto derivado** (decisión: ambos). El score da
+  matiz; el veredicto decide. El veredicto se deriva del score con umbrales por
+  plantilla y mantiene los tres estados actuales: **DESCARTAR / VIGILAR / ANALIZAR**.
+- **Override manual de Ale** sobre el veredicto (hoy col S) — se conserva, es sagrado.
+- **Fecha de los datos** (hoy col T) — se conserva: calidad sin fecha no es conocimiento.
+
+#### 3.2.1 El Foso — juicio humano asistido
+
+Checklist de las **5 fuentes de Morningstar** (costes de cambio, intangibles/marca,
+efecto red, ventaja en costes, escala eficiente), respondido sí/no:
+0 síes = sin foso · 1 = estrecho · 2+ claros = ancho.
+
+Flujo acordado (2026-07-16):
+1. Al dar de alta una empresa, **la IA investiga y propone** el checklist
+   pre-contestado con un argumento por respuesta.
+2. **Ale valida o corrige** (2-3 min). La decisión registrada es siempre la humana:
+   se guarda propuesta IA + veredicto de Ale + fecha + motivo de cada "sí".
+3. **Revisable**: no es una sentencia; se cambia con fecha y motivo si la realidad
+   lo desmiente (Morningstar cambia moats todos los meses).
+4. **Default prudente**: ante la duda, "no". Equivocarse en contra solo exige más
+   margen de seguridad; el error peligroso (regalar foso) queda bloqueado por diseño.
+5. El foso **no decide solo**: es 1 de 4 dimensiones; las otras tres son numéricas.
+
+### 3.3 ¿Qué NO forma parte de Calidad?
+
+- ❌ El precio y la valoración — un negocio excelente puede estar carísimo.
+- ❌ La decisión de compra — Ranking combina Calidad + Valoración + precio.
+- ❌ La señal técnica — RSI/SMA no dicen nada de la calidad del negocio.
+- ❌ La antigua "Capa 3" de valoración (eliminada por Ale, LÉEME §13) — decisión
+  confirmada en el dominio.
+
+### 3.4 ¿Qué la alimenta?
+
+- **Datos fundamentales históricos** (~5 años) — automático, semanal. *(Integra en
+  el dominio la tarea dominical de stockanalysis — el proceso heredado de PA-001
+  deja de ser un misterio y pasa a tener sitio propio.)*
+- **La plantilla** de la Empresa → métricas y umbrales aplicables.
+- **El juicio de Ale**: foso (al alta, asistido) y override del veredicto.
+
+### 3.5 ¿Quién la consume?
+
+- **Ranking/Decisión** — como gate y como matiz del veredicto.
+- **El estado "Seleccionada"** de Empresa — pasar/dejar de pasar Calidad es lo que
+  sube/baja empresas del radar (con Alerta en cada tránsito).
+- **Alerta** — el **deterioro de Calidad de una empresa en cartera es alerta
+  prioritaria** (decisión 2026-07-16; hoy el sistema solo alerta de precio/técnico —
+  hueco cerrado).
+
+*Fuentes: [Piotroski F-Score](https://www.quantconnect.com/research/15728/piotroski-f-score-investing/) ·
+[mejoras al F-Score / calidad MSCI](https://alphaarchitect.com/value-investing-factor-research-how-to-improve-the-piotroski-f-score-measure/) ·
+[Morningstar Economic Moat](https://www.morningstar.com/stocks/morningstar-economic-moat-rating-3) ·
+[las 5 fuentes del moat](https://www.morningstar.com/stocks/how-measure-companys-competitive-advantage)*
+
+---
+
+## 4. INVERSOR 🔎 (descubierto — pendiente de pizarra)
 
 Concepto emergido al modelar Empresa (2026-07-16): las personas del Búnker
 (Ale, Rubén, ampliable a familia/amigos). Apuntes acordados, pendientes de las 5 preguntas:
