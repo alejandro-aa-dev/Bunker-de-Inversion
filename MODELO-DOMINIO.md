@@ -26,7 +26,7 @@ No cómo lo muestra.
 | **Valoración** | ✅ Validado (2026-07-16) |
 | **Calidad** | ✅ Validado (2026-07-16) |
 | **Señal técnica** | ✅ Validado (2026-07-16) |
-| Ranking / Decisión | Pendiente |
+| **Decisión y Ranking** | ✅ Validado (2026-07-16) |
 | Cartera | Pendiente (ahora es *por Inversor*) |
 | Alerta | Pendiente (personalizable *por Inversor*) |
 
@@ -328,7 +328,84 @@ dominio del Búnker.
 
 ---
 
-## 5. INVERSOR 🔎 (descubierto — pendiente de pizarra)
+## 5. DECISIÓN Y RANKING ✅
+
+*Validado por Ale el 2026-07-16. Investigación previa: patrón secuencial
+Quality-Value-Momentum, Magic Formula (Greenblatt), Trending Value (O'Shaughnessy).*
+
+### 5.1 ¿Qué significa exactamente?
+
+Dos salidas del mismo cerebro:
+
+- La **Decisión** es el veredicto del Búnker sobre una Empresa hoy: *"¿qué haría
+  contigo?"*. Por empresa, objetiva y compartida.
+- El **Ranking** es la ordenación comparativa de las decisiones: *"con capital
+  limitado, ¿cuál primero?"*. Entre empresas.
+
+La Decisión sintetiza los tres conceptos previos **en secuencia** (patrón QVM
+profesional, que el búnker antiguo ya seguía):
+
+```
+Calidad (gate: DESCARTAR → sin decisión de compra)
+   → Valoración (potencial vs umbrales → veredicto)
+      → Señal técnica (matiz de timing: tramos, tendencia)
+```
+
+**Hay UNA sola lógica de Decisión en todo el Búnker** (decisión 2026-07-16).
+Las tres lógicas divergentes del sistema antiguo (Bunker con gate, Carteras sin
+gate, mini búnker con regla extra) eran artefactos de implementación. Las
+diferencias legítimas se expresan como parámetros, nunca como reglas por hoja.
+
+### 5.2 ¿Qué atributos tiene?
+
+**Decisión**:
+- **Veredicto**: 🔥 GANGA · ✅ BUENA COMPRA · 🟡 RAZONABLE · ⏳ ESPERAR ·
+  ⚠️ **REVISAR** (nuevo, ver abajo).
+- Potencial que lo justifica + timing técnico + fecha.
+- Umbrales como **parámetros con nombre** (default heredado: BUENA ≥25%,
+  RAZONABLE ≥10%).
+- **⚠️ REVISAR** (decisión 2026-07-16): veredicto para posiciones en cartera cuya
+  Calidad se deteriora (pasa a DESCARTAR). Cierra el hueco más peligroso del
+  sistema antiguo: el guardián vigilaba la puerta de entrada pero no el interior.
+  REVISAR significa "mírala tú" — **nunca "vende" automático**: el Búnker opina,
+  no ordena.
+- **Regla extra del mini búnker eliminada** (decisión 2026-07-16): "margen ≥20%
+  sin llegar a ganga fuerza ESPERAR" era una divergencia histórica ya cubierta por
+  el margen de seguridad de Valoración.
+
+**Ranking**:
+- Posición + criterio de ordenación explicable en una frase: **primero el
+  descuento; a igual descuento, el mejor negocio** (desempate por score de
+  Calidad — decisión 2026-07-16; antes solo descuento).
+
+### 5.3 ¿Qué NO forma parte?
+
+- ❌ La **ejecución** — comprar/vender es del Inversor contra su tesis.
+- ❌ La **presentación** (radar, iconos del bot) — ahí vive la CC-001 (icono
+  🟢/❗ inerte), bug de presentación que se arregla en la planificación sin
+  contaminar el dominio.
+- ❌ Cualquier entrada ajena a los tres conceptos (noticias, sentimiento,
+  opiniones sueltas).
+
+### 5.4 ¿Qué la alimenta?
+
+Solo Calidad + Valoración + Señal técnica + parámetros. El cerebro es
+**determinista y auditable**: mismo dato, misma decisión.
+
+### 5.5 ¿Quién la consume?
+
+- **Alerta** — los cambios de veredicto son el evento alertable por excelencia.
+- **Inversor** — la lee contra su tesis personal (puede discrepar; el Búnker no
+  se ofende).
+- **Cartera** — para posiciones existentes (promediar, revisar).
+
+*Fuentes: [estrategia Quality-Value-Momentum](https://www.quant-investing.com/blog/quality-value-momentum-the-best-strategy-you-have-never-heard-of) ·
+[combinación de factores QVM (AAII)](https://www.aaii.com/journal/article/combining-quality-growth-with-value-and-momentum) ·
+[Trending Value de O'Shaughnessy](https://www.quant-investing.com/blog/how-and-why-to-implement-james-o-shaughnessy-s-trending-value-investment-strategy-world-wide)*
+
+---
+
+## 6. INVERSOR 🔎 (descubierto — pendiente de pizarra)
 
 Concepto emergido al modelar Empresa (2026-07-16): las personas del Búnker
 (Ale, Rubén, ampliable a familia/amigos). Apuntes acordados, pendientes de las 5 preguntas:
