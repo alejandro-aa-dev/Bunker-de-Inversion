@@ -1,0 +1,388 @@
+<title>El Búnker de Inversión — explicado para Rubén</title>
+<style>
+  :root{
+    --paper:#E8E7E0; --panel:#F3F2EB; --panel-2:#EEEDE5;
+    --ink:#1E2422; --ink-soft:#57615C; --ink-faint:#7E877F;
+    --line:#D5D3C8; --line-soft:#E1DFD5;
+    --brass:#94671C; --brass-bright:#B0842F;
+    --slate:#3A4A4E;
+    --good:#3C7A4E; --yellow:#9C7418; --wait:#6C7570; --fire:#B4562A; --warn:#B85C1E; --danger:#AC3831;
+    --shadow:0 1px 2px rgba(30,36,34,.05),0 8px 28px rgba(30,36,34,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#131817; --panel:#1B2120; --panel-2:#212827;
+      --ink:#E8EAE4; --ink-soft:#9DA8A2; --ink-faint:#79837D;
+      --line:#2B3432; --line-soft:#242C2B;
+      --brass:#D8A94A; --brass-bright:#E7BD5F;
+      --slate:#93AAA8;
+      --good:#5EAE70; --yellow:#D2A63F; --wait:#8B948F; --fire:#DE7A4A; --warn:#D98235; --danger:#DD635B;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#E8E7E0; --panel:#F3F2EB; --panel-2:#EEEDE5;
+    --ink:#1E2422; --ink-soft:#57615C; --ink-faint:#7E877F;
+    --line:#D5D3C8; --line-soft:#E1DFD5;
+    --brass:#94671C; --brass-bright:#B0842F; --slate:#3A4A4E;
+    --good:#3C7A4E; --yellow:#9C7418; --wait:#6C7570; --fire:#B4562A; --warn:#B85C1E; --danger:#AC3831;
+    --shadow:0 1px 2px rgba(30,36,34,.05),0 8px 28px rgba(30,36,34,.06);
+  }
+  :root[data-theme="dark"]{
+    --paper:#131817; --panel:#1B2120; --panel-2:#212827;
+    --ink:#E8EAE4; --ink-soft:#9DA8A2; --ink-faint:#79837D;
+    --line:#2B3432; --line-soft:#242C2B;
+    --brass:#D8A94A; --brass-bright:#E7BD5F; --slate:#93AAA8;
+    --good:#5EAE70; --yellow:#D2A63F; --wait:#8B948F; --fire:#DE7A4A; --warn:#D98235; --danger:#DD635B;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing:-0.003em;
+    padding:0 20px 90px;
+  }
+  .col{max-width:720px;margin:0 auto}
+  .serif{font-family:Georgia,"Iowan Old Style","Times New Roman",serif}
+
+  /* ---- eyebrow / labels ---- */
+  .eyebrow{
+    font-family:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace;
+    font-size:11.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--brass); margin:0 0 14px;
+  }
+
+  /* ---- cover ---- */
+  header.cover{padding:76px 0 8px}
+  .crest{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:ui-monospace,Consolas,monospace;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:30px;
+  }
+  .crest .dot{width:7px;height:7px;border-radius:50%;background:var(--brass);box-shadow:0 0 0 4px color-mix(in srgb,var(--brass) 18%,transparent)}
+  h1{
+    font-family:Georgia,serif;font-weight:700;
+    font-size:clamp(38px,7.6vw,60px);line-height:1.02;letter-spacing:-.02em;
+    margin:0 0 6px;text-wrap:balance;
+  }
+  h1 .sub{display:block;font-size:clamp(17px,3.4vw,22px);font-weight:400;font-style:italic;color:var(--ink-soft);letter-spacing:0;margin-top:16px;line-height:1.4}
+  .lede{font-size:19px;color:var(--ink-soft);margin:26px 0 0;max-width:60ch}
+
+  /* ---- note from Ale ---- */
+  .note{
+    margin:40px 0 8px;padding:26px 28px;border-radius:14px;
+    background:var(--panel);border:1px solid var(--line);
+    box-shadow:var(--shadow);position:relative;
+  }
+  .note::before{
+    content:"";position:absolute;left:0;top:20px;bottom:20px;width:3px;border-radius:3px;
+    background:linear-gradient(var(--brass),var(--brass-bright));
+  }
+  .note .tag{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin:0 0 10px}
+  .note p{margin:0 0 12px}
+  .note p:last-child{margin:0}
+  .note .sign{font-family:Georgia,serif;font-style:italic;color:var(--ink-soft)}
+
+  /* ---- generic section ---- */
+  section{padding:52px 0 0}
+  h2{
+    font-family:Georgia,serif;font-weight:700;font-size:clamp(26px,4.8vw,33px);
+    line-height:1.12;letter-spacing:-.015em;margin:6px 0 0;text-wrap:balance;
+  }
+  .section-intro{color:var(--ink-soft);margin:16px 0 0;max-width:62ch}
+  hr.rule{border:0;height:1px;background:var(--line);margin:56px 0 0}
+
+  /* ---- "qué sabe" list ---- */
+  .knows{list-style:none;margin:30px 0 0;padding:0;display:grid;gap:2px}
+  .knows li{
+    display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:baseline;
+    padding:15px 4px;border-bottom:1px solid var(--line-soft);
+  }
+  .knows li:first-child{border-top:1px solid var(--line-soft)}
+  .knows .n{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--brass);font-variant-numeric:tabular-nums}
+  .knows .q{font-family:Georgia,serif;font-style:italic;font-size:18px}
+  .knows .a{display:block;color:var(--ink-soft);font-size:15px;margin-top:3px;font-family:system-ui,sans-serif;font-style:normal}
+
+  /* ---- concept cards ---- */
+  .concepts{display:grid;gap:16px;margin-top:34px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:15px;
+    padding:26px 26px 24px;box-shadow:var(--shadow);
+  }
+  .card .head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .card .num{
+    font-family:ui-monospace,Consolas,monospace;font-size:12px;font-weight:600;
+    color:var(--brass);letter-spacing:.08em;
+    border:1px solid color-mix(in srgb,var(--brass) 40%,var(--line));
+    border-radius:6px;padding:3px 8px;line-height:1;flex:none;
+  }
+  .card h3{font-family:Georgia,serif;font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em}
+  .card .ask{
+    font-family:Georgia,serif;font-style:italic;color:var(--brass-bright);
+    font-size:17px;margin:14px 0 0;
+  }
+  .card p{margin:11px 0 0;color:var(--ink-soft)}
+  .card p strong{color:var(--ink);font-weight:600}
+  .card .key{
+    margin:16px 0 0;padding:12px 15px;border-radius:9px;background:var(--panel-2);
+    border:1px solid var(--line-soft);font-size:14.5px;color:var(--ink-soft);
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .card .key b{color:var(--brass);font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding-top:2px;flex:none}
+
+  /* ---- map ---- */
+  .map{margin-top:34px;display:grid;gap:0;justify-items:center;text-align:center}
+  .node{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px 20px;box-shadow:var(--shadow);width:100%;max-width:340px;
+  }
+  .node .nt{font-family:Georgia,serif;font-weight:700;font-size:17px}
+  .node .nd{font-size:13px;color:var(--ink-soft);margin-top:2px}
+  .node.top{border-color:color-mix(in srgb,var(--brass) 45%,var(--line));max-width:380px}
+  .node.top .nt{color:var(--brass)}
+  .node.decide{background:var(--slate);border-color:var(--slate)}
+  .node.decide .nt{color:#F4F1E8}
+  .node.decide .nd{color:rgba(244,241,232,.72)}
+  .pillars{display:flex;gap:12px;width:100%;max-width:560px;justify-content:center;flex-wrap:wrap}
+  .pillars .node{max-width:none;flex:1 1 150px;min-width:150px}
+  .arrow{color:var(--ink-faint);font-size:20px;line-height:1;padding:10px 0;font-family:ui-monospace,Consolas,monospace}
+  .arrow small{display:block;font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
+  .base{display:flex;gap:12px;width:100%;max-width:420px;justify-content:center;flex-wrap:wrap}
+  .base .node{flex:1 1 160px;min-width:150px}
+
+  /* ---- verdicts ---- */
+  .verdicts{display:grid;gap:10px;margin-top:30px}
+  .verdict{
+    display:grid;grid-template-columns:auto 132px 1fr;gap:14px;align-items:center;
+    padding:13px 16px;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  }
+  .verdict .ic{font-size:20px;line-height:1;text-align:center}
+  .verdict .lbl{font-family:ui-monospace,Consolas,monospace;font-weight:600;font-size:13px;letter-spacing:.04em}
+  .verdict .desc{color:var(--ink-soft);font-size:14.5px}
+  .v-fire .lbl{color:var(--fire)} .v-good .lbl{color:var(--good)} .v-ok .lbl{color:var(--yellow)}
+  .v-wait .lbl{color:var(--wait)} .v-rev .lbl{color:var(--danger)}
+  @media (max-width:520px){
+    .verdict{grid-template-columns:auto 1fr;grid-template-areas:"ic lbl" "ic desc"}
+    .verdict .ic{grid-area:ic;align-self:start;padding-top:2px}
+    .verdict .lbl{grid-area:lbl} .verdict .desc{grid-area:desc}
+  }
+
+  /* ---- Rubén block ---- */
+  .you{margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:30px 28px;box-shadow:var(--shadow)}
+  .you h3{font-family:Georgia,serif;font-size:20px;margin:26px 0 0;letter-spacing:-.01em}
+  .you h3:first-of-type{margin-top:4px}
+  .you p{color:var(--ink-soft);margin:9px 0 0}
+  .qbox{margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}
+  .qbox .qh{font-family:ui-monospace,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin:0 0 16px}
+  .ask-list{display:grid;gap:14px;margin:0;padding:0;list-style:none;counter-reset:q}
+  .ask-list li{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+  .ask-list li::before{
+    counter-increment:q;content:counter(q);
+    font-family:ui-monospace,Consolas,monospace;font-size:13px;font-weight:600;color:var(--brass);
+    border:1px solid color-mix(in srgb,var(--brass) 40%,var(--line));border-radius:50%;
+    width:26px;height:26px;display:grid;place-items:center;flex:none;
+  }
+  .ask-list .qt{font-weight:600}
+  .ask-list .qs{color:var(--ink-soft);font-size:14.5px;margin-top:2px}
+
+  footer{margin-top:56px;padding-top:26px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:13.5px}
+  footer .legal{font-style:italic;margin-top:8px}
+
+  a{color:var(--brass-bright)}
+  @media (prefers-reduced-motion:no-preference){
+    .reveal{opacity:0;transform:translateY(10px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+    @keyframes rise{to{opacity:1;transform:none}}
+  }
+</style>
+
+<div class="wrap">
+  <div class="col">
+
+    <header class="cover reveal">
+      <div class="crest"><span class="dot"></span>Documento interno · Búnker de Inversión</div>
+      <h1>El Búnker de Inversión
+        <span class="sub">Qué sabe, cómo piensa y cómo decide — contado sin tecnicismos.</span>
+      </h1>
+      <p class="lede">Un sistema que vigila empresas de bolsa, juzga si son buenos negocios, calcula lo que valen y avisa cuando aparece una oportunidad. Esto es el mapa completo de cómo está montado por dentro.</p>
+
+      <div class="note">
+        <p class="tag">Para Rubén — de Ale</p>
+        <p>Rubén, esto es todo lo que hemos diseñado hasta ahora, traducido a cristiano. No hace falta que sepas nada técnico: léelo con calma y quédate con las <strong>ideas</strong>, no con los detalles.</p>
+        <p>Lo que de verdad me interesa es tu opinión — qué te chirría, qué falta, qué sobra y <strong>cómo lo querrías tú</strong>, porque tú también vas a usarlo. Al final del todo te dejo unas preguntas concretas.</p>
+        <p class="sign">— Ale</p>
+      </div>
+    </header>
+
+    <section>
+      <p class="eyebrow">La idea en una frase</p>
+      <h2>Comprar buenos negocios cuando están baratos — y que un sistema lo vigile por ti.</h2>
+      <p class="section-intro">El Búnker no adivina el futuro ni hace trading. Hace lo aburrido y disciplinado: mira muchas empresas, descarta las malas, calcula un precio justo para las buenas y te avisa el día que una se pone a tiro. Tú decides; él solo opina y vigila.</p>
+    </section>
+
+    <hr class="rule">
+
+    <section>
+      <p class="eyebrow">El corazón del asunto</p>
+      <h2>Todo se reduce a una pregunta: ¿qué sabe el Búnker sobre una empresa?</h2>
+      <p class="section-intro">Si respondemos bien a esto, el resto (pantallas, avisos, cálculos) es solo consecuencia. El sistema sabe siete cosas de cada empresa:</p>
+      <ul class="knows">
+        <li><span class="n">1</span><span><span class="q">¿Quién es?</span><span class="a">Identidad: nombre, en qué bolsa cotiza, país, a qué sector pertenece.</span></span></li>
+        <li><span class="n">2</span><span><span class="q">¿Es un buen negocio?</span><span class="a">Calidad: si gana dinero sano, si aguanta sus deudas, si mejora y si tiene ventaja competitiva.</span></span></li>
+        <li><span class="n">3</span><span><span class="q">¿Cuánto vale de verdad?</span><span class="a">Valoración: su precio justo, el precio de entrada con margen y cuánto podría subir.</span></span></li>
+        <li><span class="n">4</span><span><span class="q">¿Es buen momento?</span><span class="a">Señal técnica: cómo se está comportando el precio ahora mismo.</span></span></li>
+        <li><span class="n">5</span><span><span class="q">¿Qué haría con ella?</span><span class="a">Decisión y ranking: un veredicto y una prioridad frente al resto.</span></span></li>
+        <li><span class="n">6</span><span><span class="q">¿A quién le importa?</span><span class="a">Inversor y cartera: quién la tiene, quién la sigue, qué piensa de ella.</span></span></li>
+        <li><span class="n">7</span><span><span class="q">¿Cuándo avisar?</span><span class="a">Alerta: el momento justo en que algo cambia y merece un mensaje.</span></span></li>
+      </ul>
+    </section>
+
+    <hr class="rule">
+
+    <section>
+      <p class="eyebrow">Las 8 piezas</p>
+      <h2>Los ocho conceptos que forman el Búnker</h2>
+      <p class="section-intro">Cada pieza responde a una pregunta y no se mete en las demás. Esa separación es la gracia: el sistema antiguo lo mezclaba todo en una sola hoja gigante, y esto lo ordena.</p>
+
+      <div class="concepts">
+
+        <article class="card">
+          <div class="head"><span class="num">01</span><h3>Empresa</h3></div>
+          <p class="ask">¿De quién estamos hablando?</p>
+          <p>La protagonista: un negocio que cotiza en bolsa. El Búnker guarda su <strong>identidad</strong> (nombre, ticker, país, sector) y en qué <strong>situación</strong> está: la tengo comprada, el sistema la ha seleccionado solo, la vigilo de reojo, o está archivada.</p>
+          <div class="key"><b>Clave</b><span>Todo lo demás —valoración, señales, alertas— cuelga de aquí. La empresa es el perchero del que cuelga el resto.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">02</span><h3>Calidad</h3></div>
+          <p class="ask">¿Es un buen negocio, al margen del precio?</p>
+          <p>Antes de mirar cuánto cuesta, el sistema juzga si la empresa merece la pena: si <strong>gana dinero de forma sana</strong>, si <strong>no está ahogada en deudas</strong>, si <strong>mejora año a año</strong> y si tiene un <strong>"foso"</strong> que la protege de la competencia (una marca fuerte, un coste imbatible…).</p>
+          <div class="key"><b>Clave</b><span>Es el guardián. Lo que no supera este filtro, ni se molesta en valorarlo. Un negocio malo no es una ganga por barato que esté.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">03</span><h3>Valoración</h3></div>
+          <p class="ask">¿Cuánto vale de verdad?</p>
+          <p>Calcula el valor real del negocio a partir de sus números y lo contrasta con la opinión de los analistas. De ahí salen tres cosas: un <strong>precio objetivo</strong>, un <strong>precio de entrada</strong> (el objetivo menos un margen de seguridad, por si acaso) y el <strong>potencial</strong> de subida.</p>
+          <div class="key"><b>Clave</b><span>Responde "¿qué vale?", nunca "¿qué hago?". Que algo valga 100 y cueste 70 es un dato; qué hacer con ello lo decide la pieza 05.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">04</span><h3>Señal técnica</h3></div>
+          <p class="ask">¿Es buen momento para entrar?</p>
+          <p>Mira solo el <strong>comportamiento del precio</strong>: si la tendencia de fondo es buena, si está "caliente" o "frío" a corto plazo, si está tocando mínimos. Nada de esto dice si el negocio es bueno; solo habla del momento.</p>
+          <div class="key"><b>Regla de oro</b><span>La técnica nunca elige QUÉ comprar, solo CUÁNDO. Solo se le hace caso en empresas que ya son buenas y baratas. Comprar mínimos de cualquier cosa arruina; comprar mínimos de un buen negocio es la disciplina.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">05</span><h3>Decisión y ranking</h3></div>
+          <p class="ask">¿Qué haría con ella? Y si hay poco dinero, ¿cuál primero?</p>
+          <p>Junta las tres piezas anteriores en un <strong>veredicto</strong> por empresa (de "ganga" a "esperar") y ordena todas por prioridad. Hay <strong>una sola lógica</strong> para todo el sistema, así que la misma situación da siempre la misma respuesta.</p>
+          <div class="key"><b>Clave</b><span>El Búnker opina, no ordena. Nunca dice "vende" ni compra solo: te da su veredicto y tú decides. Los veredictos están más abajo.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">06</span><h3>Inversor</h3></div>
+          <p class="ask">¿Para quién trabaja el sistema?</p>
+          <p>Cada persona que lo usa: tú, Ale, y quien se sume. Esta pieza separa lo <strong>objetivo</strong> (los datos y veredictos, iguales para todos) de lo <strong>tuyo</strong> (qué tienes, qué opinas, de qué quieres que te avisen). Respondes 3 preguntas de perfil <strong>una sola vez</strong>.</p>
+          <div class="key"><b>Clave</b><span>Mesa compartida: todos veis todo, también las carteras de los demás. Al ser pocos y de confianza, no hay cajones cerrados.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">07</span><h3>Cartera</h3></div>
+          <p class="ask">¿Qué tengo yo comprado?</p>
+          <p>La lista de tus empresas. Tú mismo le dices al bot <strong>"he comprado esta"</strong> o <strong>"he vendido esta"</strong> — un mensaje, no una contabilidad. Con saber qué tienes, basta. Si te apetece, puedes añadir cuántas acciones y a qué precio para recibir avisos más finos ("estás un −12% respecto a tu precio medio").</p>
+          <div class="key"><b>Clave</b><span>El sistema funciona igual aunque no lleves ni una cuenta. Lo mínimo es obligatorio y fácil; el detalle es opcional y solo para quien quiera.</span></div>
+        </article>
+
+        <article class="card">
+          <div class="head"><span class="num">08</span><h3>Alerta</h3></div>
+          <p class="ask">¿Cuándo me escribe sin que yo pregunte?</p>
+          <p>El único momento en que el Búnker toma la iniciativa. La regla manda: <strong>avisa de cambios, no de estados</strong>. "Entró hoy en zona ganga" es una alerta; "sigue en ganga" es ruido y no se repite. Tres niveles de urgencia y un <strong>resumen cada lunes a las 8:00</strong>.</p>
+          <div class="key"><b>Clave</b><span>Cada aviso trae su porqué con números, nunca un "mira la hoja". Y puedes silenciar empresas concretas cuando quieras, sin molestar a nadie más.</span></div>
+        </article>
+
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <section>
+      <p class="eyebrow">Cómo encaja todo</p>
+      <h2>El mapa, de un vistazo</h2>
+      <p class="section-intro">Se lee de arriba abajo. La empresa entra por arriba; pasa por los tres jueces; se convierte en un veredicto; y ese veredicto, cuando cambia, dispara un aviso a la persona correcta.</p>
+
+      <div class="map">
+        <div class="node top"><div class="nt">Empresa</div><div class="nd">quién es · en qué situación está</div></div>
+        <div class="arrow">↓<small>se juzga por</small></div>
+        <div class="pillars">
+          <div class="node"><div class="nt">Calidad</div><div class="nd">¿buen negocio?</div></div>
+          <div class="node"><div class="nt">Valoración</div><div class="nd">¿qué vale?</div></div>
+          <div class="node"><div class="nt">Señal técnica</div><div class="nd">¿buen momento?</div></div>
+        </div>
+        <div class="arrow">↓<small>se resume en</small></div>
+        <div class="node decide"><div class="nt">Decisión y ranking</div><div class="nd">un veredicto + una prioridad</div></div>
+        <div class="arrow">↓<small>cuando cambia, dispara</small></div>
+        <div class="node"><div class="nt">Alerta</div><div class="nd">el aviso, con su porqué</div></div>
+        <div class="arrow">↓<small>llega a</small></div>
+        <div class="base">
+          <div class="node"><div class="nt">Inversor</div><div class="nd">tú · tu perfil · tus tesis</div></div>
+          <div class="node"><div class="nt">Cartera</div><div class="nd">lo que tienes comprado</div></div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <section>
+      <p class="eyebrow">El veredicto</p>
+      <h2>Qué te dice de cada empresa</h2>
+      <p class="section-intro">Cada empresa lleva una de estas cinco etiquetas. Recuerda: es una opinión, no una orden.</p>
+      <div class="verdicts">
+        <div class="verdict v-fire"><span class="ic">🔥</span><span class="lbl">GANGA</span><span class="desc">Buen negocio, claramente barato. La oportunidad más fuerte.</span></div>
+        <div class="verdict v-good"><span class="ic">✅</span><span class="lbl">BUENA COMPRA</span><span class="desc">Buen negocio a buen precio, con margen cómodo.</span></div>
+        <div class="verdict v-ok"><span class="ic">🟡</span><span class="lbl">RAZONABLE</span><span class="desc">Correcta, pero sin gran descuento. Vigilar.</span></div>
+        <div class="verdict v-wait"><span class="ic">⏳</span><span class="lbl">ESPERAR</span><span class="desc">Buena empresa, pero cara hoy. Paciencia.</span></div>
+        <div class="verdict v-rev"><span class="ic">⚠️</span><span class="lbl">REVISAR</span><span class="desc">Algo que tienes en cartera ha empeorado como negocio. "Míralo tú" — nunca vende solo.</span></div>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <section>
+      <p class="eyebrow">Tu sitio en el búnker</p>
+      <h2>Qué cambia para ti, Rubén</h2>
+      <div class="you">
+        <h3>Es tuyo también, no solo de Ale</h3>
+        <p>Tú eres un <em>inversor</em> del sistema con los mismos derechos: tu perfil, tu cartera, tus avisos a tu medida. Ves todo lo de todos, pero cada uno gestiona lo suyo.</p>
+
+        <h3>Registras tus movimientos tú mismo</h3>
+        <p>Cuando compres o vendas, se lo dices al bot en un mensaje. No dependes de Ale para nada del día a día.</p>
+
+        <h3>Los avisos se adaptan a ti</h3>
+        <p>Según tu perfil recibes más o menos ruido. Puedes silenciar empresas que no te interesen, y sigues recibiendo el resumen de los lunes.</p>
+
+        <div class="qbox">
+          <p class="qh">Lo que Ale necesita saber de ti</p>
+          <ul class="ask-list">
+            <li><span><span class="qt">Tu enfoque</span><span class="qs">¿Buscas sobre todo dividendos, crecimiento, valor (comprar barato) o una mezcla?</span></span></li>
+            <li><span><span class="qt">Tu horizonte</span><span class="qs">¿A cuántos años inviertes? ¿Largo plazo tranquilo o más movimiento?</span></span></li>
+            <li><span><span class="qt">Tu nivel de ruido</span><span class="qs">¿Quieres que te avise solo de las oportunidades claras, o también de los movimientos intermedios?</span></span></li>
+            <li><span><span class="qt">Tu veredicto sobre el conjunto</span><span class="qs">¿Qué te sobra, qué te falta, qué no entiendes y qué harías distinto?</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Búnker de Inversión · Modelo de dominio (Fase 2) · Resumen no técnico para revisión familiar.
+      <div class="legal">Documento informativo. No es asesoramiento financiero ni recomendación de compra o venta de ningún activo.</div>
+    </footer>
+
+  </div>
+</div>
