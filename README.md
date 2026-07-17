@@ -2,7 +2,39 @@
 
 Sistema de alertas de inversión basado en **valoración fundamental** + **señales técnicas**, ejecutado sobre Google Sheets con Google Apps Script. Envía notificaciones automáticas a Telegram: un **canal público** con las mejores oportunidades del mercado y un **flujo privado** (solo Ale y Rubén) que vigila la cartera propia.
 
-Este documento describe **todo** lo que hace el sistema, función por función.
+> ⚠️ **Estado (2026-07-17): producción CONGELADA — rediseño 3.0 en curso.**
+> Este README documenta el sistema **v2.0 actualmente en producción** (§1-§11),
+> que sigue funcionando sin cambios. El rediseño se hace por fases con revisión
+> de arquitectura; ver §0 y, para el estado vivo, `ESTADO_PROYECTO.md`.
+
+Este documento describe **todo** lo que hace el sistema v2.0, función por función.
+
+---
+
+## 0. Rediseño 3.0 — fases y mapa de documentos
+
+Regla **DEV-first**: nada toca producción sin pasar antes por DEV (`ENTORNOS.md`).
+
+| Fase | Contenido | Estado |
+|------|-----------|--------|
+| 0 — Auditoría | Auditoría completa del sistema v2.0 | ✅ Cerrada (`ACTA-CIERRE-FASE-0.md`) |
+| 2 — Modelo de dominio | 8 conceptos, relaciones y reglas (sin implementación) | 🟡 Borrador; pendiente 2ª revisión + firma (`ACTA-CIERRE-FASE-2.md`) |
+| 3 — Motor / implementación | Implementación del nuevo motor (incluye M1-M5) | ⬜ No iniciada |
+
+Documentos del rediseño:
+
+| Documento | Qué es |
+|-----------|--------|
+| `ESTADO_PROYECTO.md` | **Punto de entrada**: estado vivo y próximo paso. Leer antes de cada sesión |
+| `METODOLOGIA.md` | Roles y reglas de cierre de fase |
+| `PROTOCOLO-REVISION-ARQUITECTURA.md` | Protocolo de doble revisión (v1 congelado) |
+| `MODELO-DOMINIO.md` | Los 8 conceptos del dominio + deuda conceptual (§10) |
+| `PLANTILLAS-ANALISIS.md` | Catálogo de 10 plantillas de análisis por tipo de negocio |
+| `REVIEW-ASESOR-FASE-2.md` | Resultados de las revisiones de arquitectura de Fase 2 |
+| `PAQUETE-REVISION-2-FASE2.md` | Paquete pegable para la 2ª revisión (segundo orden) |
+| `INVESTIGACION-FIABILIDAD-VALORACION.md` / `INVESTIGACION-ANALISIS-SECTORIAL.md` | Evidencia de soporte |
+| `AUDITORIA-FASE-0.md` / `AUDITORIA-FASE-0-PARTE-B.md` | Auditoría de la Fase 0 |
+| `ENTORNOS.md` | Entornos DEV / producción |
 
 ---
 

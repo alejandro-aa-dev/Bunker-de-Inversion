@@ -28,8 +28,11 @@ Producción **CONGELADA** (regla DEV-first). Working tree limpio, todo en `main`
    tabla de `REVIEW-ASESOR-FASE-2.md` (fila espuria corregida 2026-07-17).
 2. Si supera → Ale firma el acta ("sí" en chat = validación) → cerrar
    Milestone 3 de GitHub si procede.
-3. **Planificación**: CC-001 (RCOLS, en DEV), CC-002 (README), CC-003 (LÉEME
-   del Sheet, en DEV). M1-M5 con el motor en Fase 3.
+3. **Planificación**: CC-001 (RCOLS, en DEV), CC-003 (LÉEME del Sheet, en
+   DEV). M1-M5 con el motor en Fase 3.
+   ✅ CC-002 (README) hecho 2026-07-17: §0 nuevo con fases + mapa de
+   documentos; la doc del sistema v2.0 (§1-§11) se mantuvo intacta por seguir
+   siendo exacta (producción congelada).
 
 ## Documentos clave
 
