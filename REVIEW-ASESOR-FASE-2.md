@@ -219,6 +219,6 @@ la 2ª revisión de segundo orden servirá también de verificación completa.
 
 | # | Clase | Impacto | Concepto | Hallazgo | Posición Claude | Decisión Ale |
 |---|---|---|---|---|---|---|
-| — | — | — | — | ✅ Aceptado (2026-07-16) | — | — |
+| — | — | — | — | *(pendiente de ejecución, ≥ 2026-07-18)* | — | — |
 
 **Veredicto del asesor (2ª revisión)**: *(pendiente)*
