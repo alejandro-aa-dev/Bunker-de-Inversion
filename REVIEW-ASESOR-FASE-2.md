@@ -215,10 +215,54 @@ modelo); el 8/M1 y M3-M5 son cambios de metodología para la planificación.
 Nota: el asesor emitió con lectura parcial de los documentos (caveat arriba);
 la 2ª revisión de segundo orden servirá también de verificación completa.
 
-## Resultado — Segunda revisión (segundo orden)
+## Resultado — Segunda revisión (segundo orden) — ejecutada 2026-08-28
+
+*(Lanzada por Ale con el paquete autocontenido `PAQUETE-REVISION-2-FASE2.md`.
+Esta vez el asesor SÍ leyó los tres documentos íntegros — el caveat de lectura
+parcial de la 1ª pasada queda resuelto.)*
 
 | # | Clase | Impacto | Concepto | Hallazgo | Posición Claude | Decisión Ale |
 |---|---|---|---|---|---|---|
-| — | — | — | — | *(pendiente de ejecución, ≥ 2026-07-18)* | — | — |
+| 1 | 🔴 BLOQUEANTE | ALTO | Empresa / Cartera | `Empresa.estado` es "uno y solo uno" e incluye **En cartera**, pero el mismo §1.2 declara radar/seleccionada/archivada **globales** y la cartera **personal**. Una empresa seleccionada Y en cartera de Ale no es representable | **DE ACUERDO — confirmado en el texto** (`MODELO-DOMINIO.md:71-82`). Además rompe el multi-inversor: si Rubén compra, el estado global de la empresa cambia para Ale. La corrección propuesta (sacar "En cartera" del enum → condición derivada de Inversor→Cartera→Empresa) es correcta y barata | *(pendiente)* |
+| 2 | 🔴 BLOQUEANTE | ALTO | Decisión / Calidad | "El cerebro es determinista y auditable: mismo dato, misma decisión" (`MODELO-DOMINIO.md:395`) es falso tal como está redactado: hay override de foso, override de veredicto de Calidad, valor intrínseco manual, margen de seguridad manual y parámetros versionados | **DE ACUERDO — confirmado**. La reformulación propuesta (datos + versión de parámetros + plantilla + overrides vigentes → resultado reproducible) no debilita el principio: lo hace verdadero. Consecuencia para Fase 3: overrides y parámetros deben quedar fechados/versionados o la auditoría es imposible | *(pendiente)* |
+| 3 | 🟡 MEJORA | ALTO | Decisión y Ranking | Dos responsabilidades (evaluar vs. ordenar); riesgo de divergencia futura. No separar aún, pero documentar la distinción | **PARCIALMENTE REDUNDANTE** — ya es deuda §10 punto 1 con trigger de partición. Solo falta la definición explícita de una línea. Coste: mínimo | *(pendiente)* |
+| 4 | 🟡 MEJORA | ALTO | Valoración | "Valoración" agrupa cuatro tipos de conocimiento distintos (valor, precio objetivo, precio de entrada, potencial). Dejar explícito que el núcleo es la estimación de valor y el resto son derivados | **DE ACUERDO** — coherente con `INVESTIGACION-FIABILIDAD-VALORACION.md` (el fair value no es predicción a 1 año). Blinda contra tratar el precio objetivo como predicción. Una línea | *(pendiente)* |
+| 5 | 🟡 MEJORA | MEDIO | Alerta | "Se alerta sobre transiciones, nunca sobre estados" exige memoria del estado anterior, pero "las alertas no se archivan como conocimiento". Tensión real; se resuelve como infraestructura, no con un concepto nuevo | **DE ACUERDO** — y es un **requisito de Fase 3 que conviene no perder**: sin estado anterior persistido no hay detección de transiciones | *(pendiente)* |
+| 6 | 🟡 MEJORA | MEDIO | Calidad | Mezcla evidencia automática (3 dimensiones) y juicio humano (foso). No dividir; distinguir "evidencia de calidad" vs. "juicio sobre calidad" | **REDUNDANTE EN PARTE** — deuda §10 puntos 3 y 5 ya lo cubren. Añadir que el veredicto es una **síntesis** de evidencias de origen mixto es correcto y barato | *(pendiente)* |
+| 7 | 🟡 MEJORA | MEDIO | Plantilla / Empresa | Sustituir la invariante "una Empresa = exactamente una plantilla" por "una Empresa tiene una estrategia de análisis vigente, hoy implementada como plantilla única", para dejar la puerta abierta a conglomerados/híbridos | **EN DESACUERDO (matizado)** — es diseño anticipatorio: no hay hoy ningún caso que la invariante actual no resuelva (Amazon se cubre con el override de plantilla, que ya existe). La invariante dura es lo que hace determinista el mapeo GICS. **Propongo registrarlo como deuda §10 con trigger de partición** (primer conglomerado real o negocio en transformación), no reescribir la invariante | *(pendiente)* |
+| 8 | ⚪ OPINIÓN | MEDIO | Señal técnica | El nombre se queda corto: contiene tendencia, temperatura, extremos, plan de entrada y frescura, y responde a "¿es buen momento?" → está cerca de "Timing". El propio asesor recomienda NO cambiarlo ahora | **DE ACUERDO en no tocarlo.** Renombrar un concepto del lenguaje ubicuo es caro; se anota como deuda y punto | *(pendiente)* |
 
-**Veredicto del asesor (2ª revisión)**: *(pendiente)*
+### Tarea 5 (metodología) — respuestas del asesor: SIN EFECTO
+
+⚠️ **El asesor respondió con documentación desactualizada.** El paquete incluyó
+`INVESTIGACION-FIABILIDAD-VALORACION.md` en su estado original (2026-07-16
+mañana), que todavía dice "ponderación 65/25/10" y "pendiente para la review
+del asesor: OBS-1 y OBS-2". Pero OBS-1 y OBS-2 se **cerraron en la 1ª revisión**
+y Ale decidió la fusión **65/35** (M1, commit 92a89a1), ya vigente en
+`PLANTILLAS-ANALISIS.md §2`.
+
+| Tema | Dice el asesor | Estado real |
+|---|---|---|
+| OBS-1 / ponderación | "Mantendría provisionalmente 65/25/10" | **Obsoleto** — decisión ya tomada: 65/35. No se revierte por una respuesta a una pregunta ya cerrada |
+| OBS-2 / EV/Sales | "Mantener como contraste, sin peso propio" | Coincide con lo ya aplicado (M2) |
+| Margen de seguridad | Manual + guía 10-15 / 20-25 / 30-35 | Ya aplicado (M3), guía vigente 10-15 / 20 / 30-35 |
+| Parámetros 9% / 2,5% / caps | Revisión periódica o por disparador | Ya aplicado (M4): anual o ±1 pp del tipo libre de riesgo |
+| Regla del prudente | Validar el modelo antes de aplicar la regla | Ya aplicado (M5) |
+
+**Conclusión**: las 5 respuestas de Tarea 5 **confirman** la metodología ya
+vigente; ninguna genera cambio. Deja al descubierto una incidencia de
+documentación (ver CC-004).
+
+**Veredicto del asesor (2ª revisión)**: **NO cerraría la fase — "pero por muy
+poco".** Dos bloqueantes concretos y fáciles de corregir; el resto son mejoras
+que no justificarían retrasar la fase. Valoración global de la arquitectura
+conceptual: 9,2/10. "No veo necesidad de rehacer el modelo. Veo dos invariantes
+que corregir y varias decisiones que documentar."
+
+**Posición global de Claude**: el veredicto es correcto y los dos bloqueantes
+son reales — los he verificado contra el texto, no son interpretación. Ambos se
+arreglan editando definiciones, sin tocar la estructura de los 8 conceptos, y
+el nº 1 además **refuerza** el principio multi-inversor en lugar de
+comprometerlo. Discrepo solo del hallazgo 7 (anticipatorio) y descarto las
+respuestas de Tarea 5 por documentación obsoleta. Corregidos 1 y 2, la fase
+está lista para cerrarse.

@@ -43,7 +43,10 @@ sin pensar en hojas ni en Apps Script (METODOLOGIA.md §5).
 - ✔ **Primera revisión del asesor superada** (`REVIEW-ASESOR-FASE-2.md`):
   veredicto SÍ CERRAR, 0 bloqueantes, 13 puntos aceptados por Ale y aplicados
   (commit 92a89a1).
-- ⬜ **Segunda revisión de segundo orden** — PENDIENTE (bloquea este acta).
+- 🟡 **Segunda revisión de segundo orden** — EJECUTADA 2026-08-28: veredicto **NO
+  cerrar**, 2 bloqueantes (estado de Empresa vs. cartera; redacción del
+  determinismo). Registrada en `REVIEW-ASESOR-FASE-2.md`. Bloquea este acta
+  hasta que los 2 bloqueantes estén corregidos.
 
 ## Decisiones clave de la fase (todas validadas por Ale, 2026-07-16)
 
@@ -73,7 +76,7 @@ sin pensar en hojas ni en Apps Script (METODOLOGIA.md §5).
 | Pasada | Fecha | Veredicto | Hallazgos | Resultado |
 |---|---|---|---|---|
 | 1ª (destructiva) | 2026-07-16 | **SÍ cerrar** | 0 🔴 · 6 🟡 · 2 ⚪ + 5 metodológicas | 13/13 aceptados y aplicados |
-| 2ª (segundo orden) | *(pendiente — no antes del 2026-07-18)* | — | — | — |
+| 2ª (segundo orden) | 2026-08-28 | **NO cerrar** (por poco) | 2 🔴 · 6 🟡/⚪ | Pendiente: aplicar los 2 bloqueantes |
 
 ## Incidencias que pasan a la planificación (NO se tocan en Fase 2)
 
