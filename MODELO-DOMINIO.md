@@ -68,14 +68,37 @@ de alertas) NO viven en la Empresa sino en la relación de cada Inversor con ell
   (ej.: Amazon es Consumer Discretionary por GICS pero puede analizarse como tech).
   Base: `INVESTIGACION-ANALISIS-SECTORIAL.md`.
 
-**Estado en el Búnker** (uno y solo uno en cada momento)
+**Estado en el Búnker** — dos dimensiones independientes, no una sola
+*(corrección de la 2ª revisión de arquitectura, 2026-08-28)*
+
+**a) Estado de ciclo de vida** — global y exclusivo (uno y solo uno en cada momento):
 
 | Estado | Quién lo decide | Significado |
 |---|---|---|
-| **En cartera** | Un Inversor (compra real) | Al menos un Inversor la tiene en su cartera |
 | **Seleccionada** | **El Búnker (automático)** | Del radar, pasa los filtros. Asciende y desciende sola: si deja de pasarlos vuelve al radar. Cada tránsito genera una Alerta natural |
 | **En el radar** | Ale (u otro Inversor) | Vigilada pero no pasa los filtros |
 | **Archivada** | Ale | Ya no se vigila; no se borra (patrimonio histórico, METODOLOGIA.md §7) |
+
+**b) Tenencia — "en cartera" NO es un estado de Empresa.** Es una **condición
+derivada** de la relación `Inversor → Cartera → Empresa`. No es exclusiva ni
+excluyente: una Empresa puede estar **Seleccionada** y, a la vez, en la cartera de
+Ale y en la de Rubén. La pregunta "¿está en cartera?" no tiene respuesta global
+—tiene **una por Inversor**— y su forma agregada ("alguien la tiene") se **calcula**,
+no se almacena en la Empresa.
+
+*Por qué importaba*: modelar la tenencia como estado global rompía el
+multi-inversor. Una compra privada de Rubén cambiaba el estado global de la Empresa
+para todos y borraba el hecho —simultáneamente cierto— de que seguía pasando los
+filtros. El ciclo de vida lo decide el Búnker (o Ale como admin); jamás la
+operación privada de un Inversor.
+
+**Invariantes**
+- Toda Empresa tiene exactamente **un** estado de ciclo de vida.
+- La transición radar ↔ seleccionada es automática y depende **solo** de los
+  filtros: nunca de quién la tenga comprada.
+- Una Empresa **no puede archivarse mientras exista al menos una posición abierta**
+  sobre ella (el Búnker no deja de vigilar dinero real). El enum anterior garantizaba
+  esto por construcción; al separar las dimensiones hay que declararlo.
 
 Los estados **radar / seleccionada / archivada son globales** del Búnker (el
 conocimiento se comparte). Solo la cartera —y las tesis y preferencias de alertas—
@@ -123,6 +146,16 @@ todos los Inversores; lo que cada uno haga con ella es su tesis personal.
 En el dominio existe **UNA** Valoración por Empresa (las tres réplicas del motor
 actual —Bunker USA/exUSA, Carteras, mini búnker— son un artefacto de
 implementación, redundancia R14 de la auditoría).
+
+**El núcleo es la estimación de valor; el resto son derivados** *(precisión de la
+2ª revisión, 2026-08-28)*. Valor intrínseco, precio objetivo, precio de entrada y
+potencial no son el mismo tipo de conocimiento: el intrínseco es una **estimación
+de valor**; el precio objetivo, una **referencia contrastada**; el precio de
+entrada, un **criterio operativo**; el potencial, un **cálculo aritmético** entre
+los anteriores. Ninguno es una **predicción del precio a un año**: la evidencia de
+`INVESTIGACION-FIABILIDAD-VALORACION.md` es explícita — fair value y valor
+intrínseco sirven como **ranking relativo a largo plazo**, no como pronóstico
+puntual. Tratar el precio objetivo como predicción sería un error de dominio.
 
 ### 2.2 ¿Qué atributos tiene?
 
@@ -186,6 +219,15 @@ independientemente de su precio. Responde a "¿merece este negocio mi dinero a a
 precio?"; la Valoración responde después "¿a qué precio?". Es el **guardián del
 sistema**: lo que no pasa Calidad no se valora en serio (rol de gate que ya cumple
 el filtro actual).
+
+**Evidencia de calidad ≠ juicio sobre calidad** *(precisión de la 2ª revisión,
+2026-08-28)*. El veredicto de Calidad es una **síntesis**, y sus evidencias tienen
+orígenes distintos: tres dimensiones automáticas (rentabilidad, balance,
+trayectoria) y una de juicio humano asistido (foso), más el override manual del
+veredicto. Calidad sigue siendo **un solo concepto** —"¿es buen negocio?" es una
+pregunta cohesionada— pero el modelo no confunde el dato que sostiene el juicio con
+el juicio mismo. La distinción se vuelve crítica cuando la IA aporte más evidencias:
+cambiará **quién propone**, nunca **quién juzga** (§3.2.1 y principio 9).
 
 ### 3.2 ¿Qué atributos tiene?
 
@@ -344,6 +386,12 @@ Dos salidas del mismo cerebro:
 - El **Ranking** es la ordenación comparativa de las decisiones: *"con capital
   limitado, ¿cuál primero?"*. Entre empresas.
 
+Son dos operaciones de naturaleza distinta y conviene no confundirlas:
+**Decisión = evaluación absoluta de una Empresa** (no mira a las demás);
+**Ranking = ordenación relativa de esas evaluaciones** (no reevalúa nada: ordena).
+Hoy comparten insumos y conviven bien; si algún día desarrollan reglas propias, se
+separan (deuda §10.1).
+
 La Decisión sintetiza los tres conceptos previos **en secuencia** (patrón QVM
 profesional, que el búnker antiguo ya seguía):
 
@@ -391,8 +439,36 @@ diferencias legítimas se expresan como parámetros, nunca como reglas por hoja.
 
 ### 5.4 ¿Qué la alimenta?
 
-Solo Calidad + Valoración + Señal técnica + parámetros. El cerebro es
-**determinista y auditable**: mismo dato, misma decisión.
+Solo Calidad + Valoración + Señal técnica + parámetros.
+
+**El cerebro es determinista y auditable**, con esta definición precisa
+*(reformulada en la 2ª revisión de arquitectura, 2026-08-28)*:
+
+> Dado el **mismo estado completo del dominio** —datos, versión de los parámetros,
+> plantilla vigente y overrides humanos vigentes— el motor produce **siempre el
+> mismo resultado**.
+
+La redacción anterior ("mismo dato, misma decisión") era falsa tal cual: el modelo
+admite juicio humano en varios puntos —override del foso, override del veredicto de
+Calidad, valor intrínseco manual, margen de seguridad manual— y parámetros que
+cambian bajo gobernanza (revisión anual o si el tipo libre de riesgo se mueve
+±1 pp). Con los mismos datos financieros y dos estados humanos distintos, el
+veredicto puede ser distinto — y eso es correcto: **el determinismo es del motor,
+no del juicio**. El juicio humano es una **entrada** del estado, no una excepción.
+
+Los cinco componentes del estado reproducible:
+
+| Componente | Ejemplo |
+|---|---|
+| **Datos** | Fundamentales y precios, con su fecha |
+| **Versión de parámetros** | `PESO_INTRINSECO`, `UMBRAL_BUENA_COMPRA`, tasa de descuento… |
+| **Plantilla vigente** | Qué métricas puntúan y qué modelos valoran (GICS o override) |
+| **Overrides humanos vigentes** | Foso, veredicto de Calidad, intrínseco y margen manuales |
+| **Reglas del motor** | La lógica única de Decisión (§5.1) |
+
+**Consecuencia para la implementación (Fase 3)**: la auditabilidad solo existe si
+overrides y parámetros quedan **fechados y versionados**. Un override sin fecha
+convierte una decisión histórica en irreproducible.
 
 ### 5.5 ¿Quién la consume?
 
@@ -580,6 +656,14 @@ objetivo 89€, potencial +43%"), nunca un "mira la hoja".
 - ❌ El canal (Telegram) y el formato — implementación.
 - ❌ Las consultas al bot — eso es pull del Inversor, otro mecanismo.
 
+**Precisión necesaria** *(2ª revisión, 2026-08-28)*: detectar una transición exige
+conocer el **estado anterior**. La Alerta no guarda ese conocimiento —no es un
+archivo histórico— pero **el dominio sí debe conservar el estado anterior (o una
+evidencia temporal mínima) de todo lo que puede transitar**: veredicto, tramo,
+cruce de SMA200, RSI y estado de Empresa. Se resuelve como infraestructura/histórico
+en la implementación (Fase 3), **no** creando un concepto de dominio nuevo. Sin esa
+memoria, la ley de transiciones es inaplicable.
+
 ### 8.4 ¿Qué la alimenta?
 
 Las transiciones de Decisión, Señal técnica, Calidad y estado de Empresa + el
@@ -603,8 +687,8 @@ el conocimiento vive en los conceptos; la alerta es solo el mensajero.
                          ┌─────────────────────────────┐
                          │          EMPRESA            │
                          │  identidad · GICS+plantilla │
-                         │  estado: cartera/seleccio-  │
-                         │  nada/radar/archivada       │
+                         │  estado global: radar /     │
+                         │  seleccionada / archivada   │
                          └──────┬──────────────────────┘
                                 │ es el sujeto de
         ┌───────────────┬───────┴────────┬─────────────────┐
@@ -663,16 +747,20 @@ el conocimiento vive en los conceptos; la alerta es solo el mensajero.
 8. **Automático primero**: ningún dato del modelo depende de la disciplina de
    registro de terceros; lo manual es opcional (detalle de cartera) o puntual y
    asistido (foso).
+9. **Determinismo con estado completo** ⭐ *(2ª revisión, 2026-08-28)*: dado el
+   mismo estado del dominio —datos, versión de parámetros, plantilla y overrides
+   humanos vigentes— el motor produce siempre el mismo resultado. El juicio humano
+   es una entrada del estado, no una excepción al determinismo (§5.4).
 
 ---
 
 ## 10. DEUDA CONCEPTUAL REGISTRADA
 
-*(Origen: primera revisión del asesor según PROTOCOLO-REVISION-ARQUITECTURA.md,
-2026-07-16 — veredicto: cerrar la fase. Hallazgos aceptados por Ale ("sí a
-todo"). Son observaciones de evolución, NO cambios: el modelo queda como está
-y estos apuntes marcan dónde partirlo si algún día crece. Detalle completo en
-REVIEW-ASESOR-FASE-2.md.)*
+*(Origen: las dos revisiones del asesor según PROTOCOLO-REVISION-ARQUITECTURA.md
+— la 1ª destructiva (2026-07-16, puntos 1-5) y la 2ª de segundo orden
+(2026-08-28, puntos 6-7). Hallazgos aceptados por Ale. Son observaciones de
+evolución, NO cambios: el modelo queda como está y estos apuntes marcan dónde
+partirlo si algún día crece. Detalle completo en REVIEW-ASESOR-FASE-2.md.)*
 
 1. **Decisión y Ranking tiene dos responsabilidades latentes**: clasificar
    (veredicto) y ordenar (prioridad). Conviven bien porque comparten insumos.
@@ -693,3 +781,18 @@ REVIEW-ASESOR-FASE-2.md.)*
 5. **Calidad es el concepto menos reproducible** (por el juicio del foso):
    dos analistas discreparían más en Calidad que en Valoración. Característica
    asumida, no defecto: en la mesa compartida existe UNA Calidad, la del Búnker.
+6. **La invariante "una Empresa = exactamente una plantilla" no cubre negocios
+   económicamente heterogéneos** (conglomerados, híbridos, empresas en
+   transformación). Hoy no hay ningún caso que el override de plantilla no
+   resuelva —Amazon incluido—, y la invariante dura es justamente lo que hace
+   determinista el mapeo GICS. *Trigger de partición*: el primer negocio real que
+   exija análisis compuesto; entonces la invariante pasa a "una Empresa tiene una
+   **estrategia de análisis** vigente", hoy implementada como plantilla única.
+   *(Se registra como deuda en lugar de reescribir la invariante: cambiarla ahora
+   sería diseño anticipatorio — 2ª revisión, hallazgo 7.)*
+7. **El nombre "Señal técnica" se queda corto para lo que contiene** (tendencia,
+   temperatura, extremos, plan de entrada por tramos y frescura) y responde en
+   realidad a "¿es buen momento?" — está más cerca de **Timing**. No se renombra:
+   cambiar un término del lenguaje ubicuo es caro y hoy no aporta. *Trigger*: si
+   el concepto deja de ser puramente técnico (p. ej. entra contexto macro o de
+   flujos), el nombre correcto pasa a ser Timing. *(2ª revisión, hallazgo 8.)*
